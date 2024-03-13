@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgot Password</title>
+    <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
+</head>
+<body>
+    <div class="container" style="padding: 2%; width: 30%;">
+        <h2>Validation</h2><br>
+        <div class="inline centre">
+            <form method="POST" style="margin: 0;">
+            <label for="userid">UserID:</label><br>
+            <input type="email" name="userid" id="userid" placeholder="Gmail" value="{{userid}}" required><br><br>
+            <div class="centre"><button class="mainbutton" type="submit" name="next" style="margin-bottom: 0;">Next</button></div>
+            <div class="centre">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="info" style="margin-top: 5%;">
+                            {{message}}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+            </form>
+        </div>
+    </div>
+    <form action="/"><div class="centre"><button class="mainbutton" type="submit" name="home">Home</button></div></form><br>
+</body>
+</html>

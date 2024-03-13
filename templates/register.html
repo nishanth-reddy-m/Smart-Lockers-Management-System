@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration</title>
+    <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
+</head>
+<body>
+    <div class="container">
+        <h2>Verification</h2><br>
+        <div class="inline">
+            <form method="POST">
+            <label for="userid">Gmail:</label><br>
+            <input type="email" name="userid" id="userid" value="{{userid}}" placeholder="This will be your UserID" {{condition1}} required><br>
+            <button type="submit" name="sendotp" {{condition1}}>Send OTP</button>
+            </form>
+        </div>
+        <div class="inline">
+            <form method="POST">
+            <input class="smallbox" type="tel" name="otp" id="otp" pattern="[0-9]{6}" {{condition2}} placeholder="Enter OTP" required/><br>
+            <button type="submit" name="verifyotp" {{condition2}}>Verify OTP</button>
+            </form>
+        </div>
+        <div class="centre">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="info" style="margin-top: 5%;">
+                        Status: {{message}}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+    {% if verified %}
+        <div class="container">
+            <h2>Register</h2><br>
+            <form method="post">
+                <label for="username">Name:</label><br>
+                <input type="text" name="username" id="username" placeholder="Ex: Sandeep Reddy Vanga" value="{{username}}" required><div class="info" style="margin-left: 1.25%;">First name | Middle name | Last name</div><br><br>
+                <label for="userid">Gmail:</label><br>
+                <input type="email" name="userid" id="userid" value="{{userid}}" disabled required/>
+                <div class="info"><a href="/register" style="text-decoration: none;">Choose another mail?</a></div><br><br>
+                <label for="password">Password:</label><br>
+                <input type="password" id="password" name="userpass" placeholder="Enter Password" required><br>
+                <input type="password" oninput="validatePassword()" id="confirmPassword" name="checkpass" placeholder="Confirm Password" required>
+                <div class="info" id="confirmation" style="display: inline; margin-left: 5px;"></div>
+                <div><br><br>
+                    <label for="securityquestions">Security Questions:</label><br>
+                    <input type="text" name="question1" list="questions" placeholder="Enter Question 1" value="{{q1}}" required>
+                    <input type="text" name="answer1" placeholder="Enter Answer 1" value="{{a1}}" required><br>
+                    <input type="text" name="question2" list="questions" placeholder="Enter Question 2" value="{{q2}}" required>
+                    <input type="text" name="answer2" placeholder="Enter Answer 2" value="{{a2}}" required><br>
+                    <input type="text" name="question3" list="questions" placeholder="Enter Question 3" value="{{q3}}" required>
+                    <input type="text" name="answer3" placeholder="Enter Answer 3" value="{{a3}}" required><br>
+                </div><br>
+                <div class="centre"><button type="submit" name="register" id="register" class="mainbutton" disabled>Register</button></div>
+                <datalist id="questions">
+                    <option value="What is the first vehicle your parents purchased after marriage?"></option>
+                    <option value="Which electronic brand you have used the most and felt worthy?"></option>
+                    <option value="The most memorable theatre experience of your childhood? (movie name)"></option>
+                </datalist>
+            </form>
+        </div>
+    {% endif %}
+    <form action="/"><div class="centre"><button class="mainbutton" type="submit" name="home">Home</button></div></form><br>
+</body>
+<script>
+    function validatePassword() 
+    {
+        var password = document.getElementById("password").value;
+        var confirmPassword = document.getElementById("confirmPassword").value;
+        var submitButton = document.getElementById("register");
+        var confirmation = document.getElementById("confirmation");
+        if (password !== confirmPassword) 
+        {
+            confirmation.innerText = "Passwords do not match";
+            confirmation.style.color = 'red';
+            submitButton.disabled= true;
+        }
+        else 
+        {
+            confirmation.innerText = "Passwords matching";
+            confirmation.style.color = 'green';
+            submitButton.disabled= false;
+        }
+    }
+</script>
+</html>

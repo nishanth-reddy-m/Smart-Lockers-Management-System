@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgot Password</title>
+    <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
+</head>
+<body>    
+    <div class="container">
+        <form method="POST">
+            <div class="centre"><button class="mainbutton" name="sendotp" style="width: 100%;">Send an otp to <div style="color: black; display: inline;">{{userid}}</div> </button></div>
+            <div class="centre"><button class="mainbutton" name="securityquestions" style="width: 100%;">Answer Security Questions</button></div>
+        </form>
+        {% if otpsent %}
+            <div class="centre">
+                <form method="POST">
+                    <br><input class="smallbox" type="tel" name="otp" id="otp" pattern="[0-9]{6}" placeholder="Enter OTP" required/>
+                    <div class="inline"><button name="verifyotp">Verify OTP</button></div>
+                </form>
+            </div>
+        {% endif %}
+        <div class="centre">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="info" style="margin-top: 5%;">
+                        {{message}}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+    <form><div class="centre"><button class="mainbutton" type="submit" name="back">Back</button></div></form><br>
+</body>
+</html>

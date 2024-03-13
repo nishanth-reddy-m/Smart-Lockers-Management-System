@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
+</head>
+<body>
+    <div class="container">
+        <h2>Login</h2><br>
+        <form method="POST">
+            <div>
+                <label for="userid">User ID</label>
+                <div class="centre" style="margin: 0;"><input type="email" name="userid" id="userid" style="width: 100%;" placeholder="Gmail" required/></div>
+            </div><br>
+            <div>
+                <label for="userpass">Password</label>
+                <div class="centre" style="margin: 0;"><input type="password" name="userpass" id="userpass" style="width: 100%;" required></div>
+            </div>
+            <div class="centre"><button class="mainbutton" type="submit" name="login">Submit</button></div>
+        </form>
+        <div class="centre"><div class="info"><a href="/reset" style="text-decoration: none;">Forgot/Reset Password</a><span>&nbsp; | &nbsp;</span><a href="/register" style="text-decoration: none;">Register</a><span>&nbsp; | &nbsp;</span><a href="/" style="text-decoration: none;">Home</a></div></div></div>
+    </div>
+</body>
+</html>
