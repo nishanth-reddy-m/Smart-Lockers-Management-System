@@ -92,6 +92,26 @@ def register():
     flash('Not yet Verified')
     return render_template('register.html',condition2='disabled')
 
+def private_disabled(locker):
+    userid = session['userid']
+    db = mongo.majorproject
+    dblocker = db.users.find_one({'userid':userid},{'_id': 0, 'checked_in': 1})
+    try:
+        privatelockers = dblocker['checked_in']
+        return locker not in privatelockers
+    except KeyError:
+        privatelockers = []
+        return locker not in privatelockers
+
+def public_disabled(locker):
+    db = mongo.majorproject
+    dblocker = db.lockers.find_one({},{'_id': 0, 'available_lockers': 1})
+    try:
+        publiclockers = dblocker['available_lockers']
+        return locker not in publiclockers
+    except KeyError:
+        publiclockers = []
+        return locker not in publiclockers
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -102,9 +122,13 @@ def login():
             userpass = request.form['userpass']
             user=db.users.find_one({'userid':userid,'userpass':userpass})
             if user:
-                return 'Logged in'
+                session['userid'] = userid
+                dblockers = db.lockers.find_one({},{'_id': 0, 'all_lockers': 1})
+                lockers = dblockers['all_lockers']
+                return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled)
             else:
-                return 'Invalid UserID or password'
+                flash('Invalid UserID or Password')
+                return render_template('login.html', userid=userid)
     return render_template('login.html')
 
 @app.route('/reset', methods=['GET','POST'])
@@ -155,10 +179,6 @@ def reset():
         return render_template('resetsuccess.html')
 
     return render_template('validate.html')
-
-@app.route('/test')
-def test():
-    return redirect('/#')
 
 if(__name__=='__main__'):
     app.run(debug = True)

@@ -12,15 +12,26 @@
         <form method="POST">
             <div>
                 <label for="userid">User ID</label>
-                <div class="centre" style="margin: 0;"><input type="email" name="userid" id="userid" style="width: 100%;" placeholder="Gmail" required/></div>
+                <div class="centre" style="margin: 0;"><input type="email" name="userid" id="userid" style="width: 100%;" placeholder="Gmail" value="{{userid}}" required/></div>
             </div><br>
             <div>
                 <label for="userpass">Password</label>
                 <div class="centre" style="margin: 0;"><input type="password" name="userpass" id="userpass" style="width: 100%;" required></div>
-            </div>
+            </div><br>
             <div class="centre"><button class="mainbutton" type="submit" name="login">Submit</button></div>
         </form>
-        <div class="centre"><div class="info"><a href="/reset" style="text-decoration: none;">Forgot/Reset Password</a><span>&nbsp; | &nbsp;</span><a href="/register" style="text-decoration: none;">Register</a><span>&nbsp; | &nbsp;</span><a href="/" style="text-decoration: none;">Home</a></div></div></div>
+        <div class="centre"><div class="info"><a href="/reset" style="text-decoration: none;">Forgot/Reset Password</a><span>&nbsp; | &nbsp;</span><a href="/register" style="text-decoration: none;">Register</a><span>&nbsp; | &nbsp;</span><a href="/" style="text-decoration: none;">Home</a></div></div>
+        <div class="centre">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="info" style="margin-top: 5%;">
+                        {{message}}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
     </div>
 </body>
 </html>

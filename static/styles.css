@@ -99,3 +99,45 @@ button:disabled {
   color: #0056b3;
   cursor: pointer;  
 }
+ul {
+  list-style-type: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+li {
+  margin: 10px;
+}
+input[type="checkbox"] {
+  display: none;
+}
+label.checkbox {
+  position: relative;
+  padding: 25px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  background-color: #fff;
+  transition: background-color 0.3s ease;
+}
+label.checkbox:hover {
+  border: 1px solid #4caf50;
+}
+input[type="checkbox"]:checked + label.checkbox {
+  background-color: #4caf50;
+  color: #fff;
+  border-color: #4caf50;
+}
+input[type="checkbox"]:disabled + label.checkbox {
+  background-color: grey;
+  cursor: not-allowed;
+}
+label.checkbox:after {
+  content: attr(data-number);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}

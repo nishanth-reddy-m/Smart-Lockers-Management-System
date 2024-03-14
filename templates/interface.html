@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interface</title>
+    <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
+</head>
+<body>
+    <div class="container">
+        <h2>Your Lockers</h2>
+        <form method="post">
+            <ul>
+                {% for locker in lockers %}
+                <li>
+                    <input type="checkbox" id="user_{{locker}}" name="user_lockers" value="{{locker}}" {% if private_disabled(locker) %}disabled{% endif %}>
+                    <label class="checkbox {% if private_disabled(locker) %}disabled{% endif %}" for="user_{{locker}}" data-number="{{locker}}"></label>
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="centre"><button type="submit" class="mainbutton" name="checkout">Check OUT</button></div>
+        </form>
+    </div>
+    <div class="container">
+        <h2>Available Lockers</h2>
+        <form method="post">
+            <ul>
+                {% for locker in lockers %}
+                <li>
+                    <input type="checkbox" id="global_{{locker}}" name="global_lockers" value="{{locker}}" {% if public_disabled(locker) %}disabled{% endif %}>
+                    <label class="checkbox {% if public_disabled(locker) %}disabled{% endif %}" for="global_{{locker}}" data-number="{{locker}}"></label>
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="centre"><button type="submit" class="mainbutton" name="checkin">Check IN</button></div>
+        </form>
+    </div>
+</body>
+</html>
