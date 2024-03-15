@@ -57,48 +57,6 @@ button:disabled {
   background-color: grey;
   cursor: not-allowed;
 }
-.container{
-  border: 1px solid black;
-  border-radius: 5px;
-  justify-content: space-around;
-  padding: 5%;
-  width: auto;
-  background-color: transparent;
-  display: inline-block;
-  margin: 20px;
-}
-.smallbox {
-  width: 100px;
-}
-.inline {
-  display: inline-block;
-}
-.centre {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  margin-top: 10px;
-}
-.mainbutton {
-  font-size: medium;
-  width: 150px;
-}
-.info {
-  display: inline-block;
-  text-align: center; 
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-}
-.info button {
-  color: #007bff;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: medium;
-  text-align: center;
-  background-color: transparent;
-}
-.info button:hover {
-  color: #0056b3;
-  cursor: pointer;  
-}
 ul {
   list-style-type: none;
   padding: 0;
@@ -140,4 +98,46 @@ label.checkbox:after {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
+}
+.container{
+  border: 1px solid black;
+  border-radius: 5px;
+  justify-content: space-around;
+  padding: 5%;
+  width: auto;
+  background-color: transparent;
+  display: inline-block;
+  margin: 20px;
+}
+.smallbox {
+  width: 100px;
+}
+.inline {
+  display: inline-block;
+}
+.centre {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-top: 10px;
+}
+.mainbutton {
+  font-size: medium;
+  width: 150px;
+}
+.info {
+  display: inline-block;
+  text-align: center; 
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+.info button {
+  color: #007bff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: medium;
+  text-align: center;
+  background-color: transparent;
+}
+.info button:hover {
+  color: #0056b3;
+  cursor: pointer;  
 }

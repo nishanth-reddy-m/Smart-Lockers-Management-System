@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password</title>
-    <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block title %}Registration{% endblock %}
+
+{% block content %}
     <div class="container" style="padding: 2%; width: 30%;">
         <h2>Validation</h2><br>
         <div class="inline centre">
@@ -29,5 +25,4 @@
         </div>
     </div>
     <form action="/"><div class="centre"><button class="mainbutton" type="submit" name="home">Home</button></div></form><br>
-</body>
-</html>
+{% endblock %}

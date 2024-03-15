@@ -1,17 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Success</title>
-    <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block title %}Reset Success{% endblock %}
+
+{% block content %}
     <div class="container">
         <form action="/">
             <h2 style="color: green;">Your password has been reset Successfully!</h2>
             <div class="centre"><button class="mainbutton">Ok</button></div>
         </form>
     </div>
-</body>
-</html>
+{% endblock %}

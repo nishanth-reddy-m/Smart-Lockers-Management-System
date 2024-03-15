@@ -6,8 +6,8 @@
     <title>Interface</title>
     <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
 </head>
-<body>
-    <div class="container">
+<body style="padding: 0;">
+    <div class="container" style="padding: 2%;width: 25%;min-width: 250px;">
         <h2>Your Lockers</h2>
         <form method="post">
             <ul>
@@ -21,7 +21,7 @@
             <div class="centre"><button type="submit" class="mainbutton" name="checkout">Check OUT</button></div>
         </form>
     </div>
-    <div class="container">
+    <div class="container" style="padding: 2%;width: 25%;min-width: 250px;">
         <h2>Available Lockers</h2>
         <form method="post">
             <ul>
@@ -35,5 +35,6 @@
             <div class="centre"><button type="submit" class="mainbutton" name="checkin">Check IN</button></div>
         </form>
     </div>
+    <div class="centre"><form method="post"><button type="submit" class="mainbutton" name="logout">Logout</button></form></div>
 </body>
 </html>
