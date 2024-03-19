@@ -4,10 +4,13 @@
 
 {% block content %}
     <div class="container">
-        <form action="/">
             <h2 style="color: green;">Registration Successfull!</h2>
-            <h2>Please recharge your account before Checking In</h2>
-            <div class="centre"><button class="mainbutton">Ok</button></div>
-        </form>
+            <h2>Please recharge your account before Checking In</h2><br>
+            <h2>Redirecting to Home Page...</h2>
     </div>
+    <script>
+        setTimeout(function() {
+            window.location.href = "/";
+        }, 5000);
+    </script>
 {% endblock %}

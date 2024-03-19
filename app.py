@@ -44,8 +44,7 @@ def register():
             session['otp']=otp
             msg = Message(subject='Verification',
                     recipients=[userid],
-                    body=message,
-                    extra_headers={"Importance": "High"}
+                    body=message
             )
             try:
                 mail.send(msg)
@@ -54,7 +53,7 @@ def register():
             except Exception as e:
                 flash(f'Failed to send email: {str(e)}')
                 return render_template('register.html',userid=userid)
-    elif 'verifyotp' in request.form:
+    if 'verifyotp' in request.form:
         entered_otp=request.form['otp']
         otp=session['otp']
         if(entered_otp == otp):
@@ -65,9 +64,9 @@ def register():
             userid=session['userid']
             flash('Incorrect OTP. Please try again')
             return render_template('register.html',userid=userid)
-    elif 'register' in request.form:
+    if 'register' in request.form:
         userid = session['userid']
-        username = request.form['username']
+        username = request.form['username'].lower()
         userpass = request.form['userpass']
         checkpass = request.form['checkpass']
         q1 = request.form['question1']
@@ -80,9 +79,15 @@ def register():
             'userid':userid, 
             'userpass':userpass,
             'username':username,
-            'qanda':{q1:a1, q2:a2, q3:a3},
+            'qanda':{
+                'q1':q1,
+                'a1':a1,
+                'q2':q2,
+                'a2':a2,
+                'q3':q3,
+                'a3':a3,
+                },
             'checked_in':[],
-            'locker_log':{}, 
             'wallet':0 })
         session.pop('userid', None)
         session.pop('otp', None)
@@ -155,11 +160,19 @@ def reset():
         session['userid'] = userid
         exists = db.users.find_one({'userid':userid})
         if exists:
-            userid = session['userid']
-            return render_template('reset.html', userid=userid)
+            return render_template('validate.html', userid=userid, valid=True, condition='disabled', display=False)
         else:
             flash("User don't exist")
             return render_template('validate.html',userid=userid)
+    if 'check' in request.form:
+        userid = session['userid']
+        username = request.form['username']
+        exists = db.users.find_one({'userid':userid, 'username':username.lower()})
+        if exists:
+            return render_template('reset.html',userid=userid)
+        else:
+            flash('Incorrect Username')
+            return render_template('validate.html', userid=userid, username=username, valid=True, condition='disabled')
     if 'sendotp' in request.form:
         userid = session['userid']
         otp = str(random.randint(100000,999999))
@@ -167,8 +180,7 @@ def reset():
         session['otp']=otp
         msg = Message(subject='Verification',
                 recipients=[userid],
-                body=message,
-                extra_headers={"Importance": "High"}
+                body=message
         )
         try:
             mail.send(msg)
@@ -182,19 +194,66 @@ def reset():
         otp=session['otp']
         userid = session['userid']
         if(entered_otp == otp):
+            session.pop('otp', None)
             return render_template('changepassword.html')
         else:
             flash('Incorrect OTP. Please try again')
             return render_template('reset.html',otpsent=True,userid=userid)
+    if 'securityquestions' in request.form:
+        userid = session['userid']
+        dbqanda = db.users.find_one({'userid':userid}, {'_id': 0, 'qanda': 1})
+        qanda = dbqanda['qanda']
+        session['qanda'] = qanda
+        q1 = qanda['q1']
+        q2 = qanda['q2']
+        q3 = qanda['q3']
+        return render_template('reset.html', answersq=True, userid=userid, q1=q1, q2=q2, q3=q3)
+    if 'verifyanswers' in request.form:
+        userid = session['userid']
+        qanda = session['qanda']
+        a1 = request.form['a1']
+        a2 = request.form['a2']
+        a3 = request.form['a3']
+        session['a1'] = a1
+        session['a2'] = a2
+        session['a3'] = a3
+        if a1.lower().replace(" ", "") == qanda['a1'] and a2.lower().replace(" ", "") == qanda['a2'] and a3.lower().replace(" ", "") == qanda['a3']:
+            session.pop('qanda', None)
+            session.pop('a1', None)
+            session.pop('a2', None)
+            session.pop('a3', None)
+            return render_template('changepassword.html')
+        else:
+            qanda = session['qanda']
+            q1 = qanda['q1']
+            q2 = qanda['q2']
+            q3 = qanda['q3']
+            a1 = session['a1']
+            a2 = session['a2']
+            a3 = session['a3']
+            flash("Incorrect Answer(s)!")
+            return render_template('reset.html', answersq=True, userid=userid, q1=q1, q2=q2, q3=q3, a1=a1, a2=a2, a3=a3)
     if 'change' in request.form:
         userid = session['userid']
         userpass = request.form['userpass']
         db.users.update_one({'userid':userid},{'$set':{'userpass':userpass}})
-        session.pop('userid', None)
-        session.pop('otp', None)
-        return render_template('resetsuccess.html')
+        message = 'Your password has been successfully changed'
+        msg = Message(subject='Reset Password',
+                recipients=[userid],
+                body=message
+        )
+        try:
+            mail.send(msg)
+            session.pop('userid', None)
+            return render_template('resetsuccess.html')
+        except Exception as e:
+            flash(f'Failed to send email: {str(e)}')
+            return render_template('changepassword.html')
+    return render_template('validate.html',display=True)
 
-    return render_template('validate.html')
+@app.route('/testing', methods=['GET','POST'])
+def testing():
+    return render_template('registrationsuccess.html')
 
 if(__name__=='__main__'):
     app.run(debug = True)

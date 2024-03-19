@@ -8,20 +8,29 @@
         <div class="inline centre">
             <form method="POST" style="margin: 0;">
             <label for="userid">UserID:</label><br>
-            <input type="email" name="userid" id="userid" placeholder="Gmail" value="{{userid}}" required><br><br>
-            <div class="centre"><button class="mainbutton" type="submit" name="next" style="margin-bottom: 0;">Next</button></div>
-            <div class="centre">
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        {% for message in messages %}
-                        <div class="info" style="margin-top: 5%;">
-                            {{message}}
-                        </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
-            </div>
+            <input type="email" name="userid" id="userid" placeholder="Gmail" value="{{userid}}" autocomplete="off" {{condition}} required><br><br>
+            {% if display %}<div class="centre"><button class="mainbutton" type="submit" name="next" style="margin-bottom: 0;" {{condition}} >Next</button></div>{% endif %}
             </form>
+        </div>
+        {% if valid %}
+            <div class="inline centre">
+                <form method="POST" style="margin: 0;">
+                <label for="username">Name:</label><span> </span><div class="info">(Registered Name)</div><br>
+                <input type="text" name="username" id="username" placeholder="First name | Middle name | Last name" value="{{username}}" autocomplete="off" required><br><br>
+                <div class="centre"><button class="mainbutton" type="submit" name="check" style="margin-bottom: 0;">Next</button></div>
+                </form>
+            </div>
+        {% endif %}
+        <div class="centre">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="info" style="margin-top: 5%;">
+                        {{message}}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
         </div>
     </div>
     <form action="/"><div class="centre"><button class="mainbutton" type="submit" name="home">Home</button></div></form><br>

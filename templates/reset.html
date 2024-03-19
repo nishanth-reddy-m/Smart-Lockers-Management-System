@@ -5,7 +5,7 @@
 {% block content %}
     <div class="container">
         <form method="POST">
-            <div class="centre"><button class="mainbutton" name="sendotp" style="width: 100%;">Send an otp to <div style="color: black; display: inline;">{{userid}}</div> </button></div>
+            <div class="centre"><button class="mainbutton" name="sendotp" style="width: 100%;">Send an otp to <div style="color:rgb(200, 250, 255); display: inline;">{{userid}}</div> </button></div>
             <div class="centre"><button class="mainbutton" name="securityquestions" style="width: 100%;">Answer Security Questions</button></div>
         </form>
         {% if otpsent %}
@@ -13,6 +13,20 @@
                 <form method="POST">
                     <br><input class="smallbox" type="tel" name="otp" id="otp" pattern="[0-9]{6}" placeholder="Enter OTP" required/>
                     <div class="inline"><button name="verifyotp">Verify OTP</button></div>
+                </form>
+            </div>
+        {% endif %}
+        {% if answersq %}
+            <div>
+                <form method="POST">
+                    <br><br><br>
+                    <label for="a1">{{q1}}</label><br>
+                    <input type="text" name="a1" id="a1" placeholder="Enter Answer" value="{{a1}}" autocomplete="off"><br><br>
+                    <label for="a2">{{q2}}</label><br>
+                    <input type="text" name="a2" id="a2" placeholder="Enter Answer" value="{{a2}}" autocomplete="off"><br><br>
+                    <label for="a3">{{q3}}</label><br>
+                    <input type="text" name="a3" id="a3" placeholder="Enter Answer" value="{{a3}}" autocomplete="off"><br><br>
+                    <div class="centre"><button class="mainbutton" name="verifyanswers">Verify Answers</button></div>
                 </form>
             </div>
         {% endif %}
