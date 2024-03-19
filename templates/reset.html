@@ -11,7 +11,7 @@
         {% if otpsent %}
             <div class="centre">
                 <form method="POST">
-                    <br><input class="smallbox" type="tel" name="otp" id="otp" pattern="[0-9]{6}" placeholder="Enter OTP" required/>
+                    <br><input class="smallbox" type="tel" name="otp" id="otp" pattern="[0-9]{6}" placeholder="Enter OTP" autocomplete="off" required/>
                     <div class="inline"><button name="verifyotp">Verify OTP</button></div>
                 </form>
             </div>
@@ -21,11 +21,11 @@
                 <form method="POST">
                     <br><br><br>
                     <label for="a1">{{q1}}</label><br>
-                    <input type="text" name="a1" id="a1" placeholder="Enter Answer" value="{{a1}}" autocomplete="off"><br><br>
+                    <input type="text" name="a1" id="a1" placeholder="Enter Answer" value="{{a1}}" autocomplete="off" required><br><br>
                     <label for="a2">{{q2}}</label><br>
-                    <input type="text" name="a2" id="a2" placeholder="Enter Answer" value="{{a2}}" autocomplete="off"><br><br>
+                    <input type="text" name="a2" id="a2" placeholder="Enter Answer" value="{{a2}}" autocomplete="off" required><br><br>
                     <label for="a3">{{q3}}</label><br>
-                    <input type="text" name="a3" id="a3" placeholder="Enter Answer" value="{{a3}}" autocomplete="off"><br><br>
+                    <input type="text" name="a3" id="a3" placeholder="Enter Answer" value="{{a3}}" autocomplete="off" required><br><br>
                     <div class="centre"><button class="mainbutton" name="verifyanswers">Verify Answers</button></div>
                 </form>
             </div>

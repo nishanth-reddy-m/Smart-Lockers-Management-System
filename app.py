@@ -163,7 +163,7 @@ def reset():
             return render_template('validate.html', userid=userid, valid=True, condition='disabled', display=False)
         else:
             flash("User don't exist")
-            return render_template('validate.html',userid=userid)
+            return render_template('validate.html',display=True)
     if 'check' in request.form:
         userid = session['userid']
         username = request.form['username']
@@ -253,7 +253,8 @@ def reset():
 
 @app.route('/testing', methods=['GET','POST'])
 def testing():
-    return render_template('registrationsuccess.html')
+    pass
+    return redirect('/#')
 
 if(__name__=='__main__'):
     app.run(debug = True)
