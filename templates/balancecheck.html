@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}Insufficient Balance{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2>Please recharge your account to CheckIn/CheckOut</h2><br>
+        <h2>Your Current Balance: <div style="color: red; display: inline;">₹{{amount}}</div></h2><br>
+        <form action="/"><div class="centre"><button class="mainbutton" type="submit" name="home" style="width: 100%;">Ok</button></div></form><br>
+    </div>
+{% endblock %}

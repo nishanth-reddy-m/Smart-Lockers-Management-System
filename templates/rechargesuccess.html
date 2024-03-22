@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}Recharge Successful{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 style="color: green;">Recharge Successful</h2><br>
+        <h2>Your Current Balance: ₹{{wallet}}</h2><br>
+        <form action="/"><div class="centre"><button class="mainbutton" type="submit" name="home">Ok</button></div></form><br>
+    </div>
+{% endblock %}

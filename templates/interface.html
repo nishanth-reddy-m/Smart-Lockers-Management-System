@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
 </head>
 <body style="padding: 0;">
+    <div class="centre info"><h2>Wallet Balance: ₹{{amount}}</h2></div>
     <div class="container" style="padding: 2%;width: 25%;min-width: 250px;">
         <h2>Your Lockers</h2>
         <form method="post">
@@ -18,7 +19,7 @@
                 </li>
                 {% endfor %}
             </ul>
-            <div class="centre"><button type="submit" class="mainbutton" name="checkout">Check OUT</button></div>
+            <div class="centre"><button type="submit" class="mainbutton" name="checkout" disabled>Check OUT</button></div>
         </form>
     </div>
     <div class="container" style="padding: 2%;width: 25%;min-width: 250px;">
@@ -32,9 +33,56 @@
                 </li>
                 {% endfor %}
             </ul>
-            <div class="centre"><button type="submit" class="mainbutton" name="checkin">Check IN</button></div>
+            <div class="centre"><button type="submit" class="mainbutton" name="checkin" disabled>Check IN</button></div>
         </form>
     </div>
     <div class="centre"><form method="post"><button type="submit" class="mainbutton" name="logout">Logout</button></form></div>
 </body>
+<script>
+    function updateButtonState() {
+        var user_checkbox = document.querySelectorAll('input[name="user_lockers"]');
+        var global_checkbox = document.querySelectorAll('input[name="global_lockers"]');
+        var checkinButton = document.querySelector('button[name="checkin"]');
+        var checkoutButton = document.querySelector('button[name="checkout"]');
+        var user_checkedCount = 0, global_checkedCount = 0;
+
+        global_checkbox.forEach(function(checkbox) {
+            if (checkbox.checked) {
+                global_checkedCount++;
+            }
+        });
+
+        user_checkbox.forEach(function(checkbox) {
+            if (checkbox.checked) {
+                user_checkedCount++;
+            }
+        });
+
+        if (user_checkedCount > 0) {
+            checkoutButton.removeAttribute('disabled');
+        } else {
+            checkoutButton.setAttribute('disabled', 'disabled');
+        }
+
+        if (global_checkedCount > 0) {
+            checkinButton.removeAttribute('disabled');
+        } else {
+            checkinButton.setAttribute('disabled', 'disabled');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateButtonState();
+
+        var user_checkbox = document.querySelectorAll('input[name="user_lockers"]');
+        user_checkbox.forEach(function(checkbox) {
+            checkbox.addEventListener('change', updateButtonState);
+        });
+
+        var global_checkbox = document.querySelectorAll('input[name="global_lockers"]');
+        global_checkbox.forEach(function(checkbox) {
+            checkbox.addEventListener('change', updateButtonState);
+        });
+    });
+</script>
 </html>

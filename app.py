@@ -95,6 +95,27 @@ def register():
     flash('Not yet Verified')
     return render_template('register.html',condition2='disabled')
 
+@app.route('/recharge', methods=['GET','POST'])
+def recharge():
+    db = mongo.majorproject
+    if 'next' in request.form:
+        userid = request.form['userid']
+        exists = db.users.find_one({'userid':userid})
+        if exists:
+            session['userid'] = userid
+            return render_template('recharge.html', userid=userid, valid=True, condition='disabled', display=False)
+        else:
+            flash("User don't exist")
+            return render_template('recharge.html',display=True, userid=userid)
+    if 'pay' in request.form:
+        userid = session['userid']
+        amount = int(request.form['amount'])
+        db.users.update_one({'userid':userid}, {'$inc': {'wallet': amount}})
+        wallet = balance(userid)
+        session.pop('userid', None)
+        return render_template('rechargesuccess.html', wallet=wallet)
+    return render_template('recharge.html', display=True)
+
 def private_disabled(locker):
     userid = session['userid']
     db = mongo.majorproject
@@ -116,6 +137,12 @@ def public_disabled(locker):
         publiclockers = []
         return locker not in publiclockers
 
+def balance(userid):
+    db = mongo.majorproject
+    dbamount = db.users.find_one({'userid':userid},{'_id': 0, 'wallet': 1})
+    amount = dbamount['wallet']
+    return amount
+
 @app.route('/login', methods=['GET','POST'])
 def login():
         db = mongo.majorproject
@@ -124,28 +151,35 @@ def login():
             userpass = request.form['userpass']
             user=db.users.find_one({'userid':userid,'userpass':userpass})
             if user:
-                session['userid'] = userid
-                dblockers = db.lockers.find_one({},{'_id': 0, 'all_lockers': 1})
-                lockers = dblockers['all_lockers']
-                session['lockers'] = lockers
-                return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled)
+                wallet = balance(userid)
+                if wallet > 0:
+                    session['userid'] = userid
+                    amount = balance(userid)
+                    dblockers = db.lockers.find_one({},{'_id': 0, 'all_lockers': 1})
+                    lockers = dblockers['all_lockers']
+                    session['lockers'] = lockers
+                    return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount)
+                else:
+                    return render_template('balancecheck.html', amount=wallet)
             else:
                 flash('Invalid UserID or Password')
                 return render_template('login.html', userid=userid)
         if 'checkin' in request.form:
             userid = session['userid']
             lockers = session['lockers']
+            amount = balance(userid)
             checked_in = request.form.getlist('global_lockers')
             db.users.update_one({'userid':userid}, {"$push": {"checked_in": {"$each": checked_in}}})
             db.lockers.update_one({},{'$pull':{'available_lockers':{'$in': checked_in}}})
-            return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled)
+            return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount)
         if 'checkout' in request.form:
             userid = session['userid']
             lockers = session['lockers']
+            amount = balance(userid)
             checked_in = request.form.getlist('user_lockers')
             db.users.update_one({'userid':userid}, {"$pull": {"checked_in":{'$in': checked_in}}})
             db.lockers.update_one({},{'$push':{'available_lockers':{'$each': checked_in}}})
-            return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled)
+            return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount)
         if 'logout' in request.form:
             session.pop('userid', None)
             session.pop('lockers', None)
@@ -157,13 +191,13 @@ def reset():
     db = mongo.majorproject
     if 'next' in request.form:
         userid = request.form['userid']
-        session['userid'] = userid
         exists = db.users.find_one({'userid':userid})
         if exists:
+            session['userid'] = userid
             return render_template('validate.html', userid=userid, valid=True, condition='disabled', display=False)
         else:
             flash("User don't exist")
-            return render_template('validate.html',display=True)
+            return render_template('validate.html',display=True, userid=userid)
     if 'check' in request.form:
         userid = session['userid']
         username = request.form['username']
