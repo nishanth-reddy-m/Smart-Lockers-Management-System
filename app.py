@@ -1,5 +1,7 @@
 import os
 import random
+from datetime import datetime
+#import serial
 from flask import *
 from flask_mail import Mail, Message
 from pymongo import MongoClient
@@ -10,6 +12,8 @@ load_dotenv()
 mongodb = os.getenv('MONGODB')
 username = os.getenv('MAILUSERNAME')
 password = os.getenv('MAILPASSWORD')
+
+#arduino = serial.Serial('COM5',9600)
 
 app=Flask(__name__)
 
@@ -87,7 +91,7 @@ def register():
                 'q3':q3,
                 'a3':a3,
                 },
-            'checked_in':[],
+            'checked_in':{},
             'wallet':0 })
         session.pop('userid', None)
         session.pop('otp', None)
@@ -120,28 +124,28 @@ def private_disabled(locker):
     userid = session['userid']
     db = mongo.majorproject
     dblocker = db.users.find_one({'userid':userid},{'_id': 0, 'checked_in': 1})
-    try:
-        privatelockers = dblocker['checked_in']
-        return locker not in privatelockers
-    except KeyError:
-        privatelockers = []
-        return locker not in privatelockers
+    privatelockers = dblocker.get('checked_in',{})
+    return locker not in privatelockers
 
 def public_disabled(locker):
     db = mongo.majorproject
     dblocker = db.lockers.find_one({},{'_id': 0, 'available_lockers': 1})
-    try:
-        publiclockers = dblocker['available_lockers']
-        return locker not in publiclockers
-    except KeyError:
-        publiclockers = []
-        return locker not in publiclockers
+    publiclockers = dblocker.get('available_lockers',[])
+    return locker not in publiclockers
 
 def balance(userid):
     db = mongo.majorproject
     dbamount = db.users.find_one({'userid':userid},{'_id': 0, 'wallet': 1})
     amount = dbamount['wallet']
     return amount
+
+def unoaction(checked,Input):
+    action = ''
+    for locker in checked:
+        action += locker
+    action += Input
+    arduino.write(action.encode('utf-8'))
+    receive = arduino.readline().decode().strip()
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -168,17 +172,25 @@ def login():
             userid = session['userid']
             lockers = session['lockers']
             amount = balance(userid)
-            checked_in = request.form.getlist('global_lockers')
-            db.users.update_one({'userid':userid}, {"$push": {"checked_in": {"$each": checked_in}}})
-            db.lockers.update_one({},{'$pull':{'available_lockers':{'$in': checked_in}}})
+            checked = request.form.getlist('global_lockers')
+            db.lockers.update_one({},{'$pull':{'available_lockers':{'$in': checked}}})
+            db.users.update_one({'userid':userid}, {"$set": {"checked_in": {locker: datetime.now() for locker in checked}}})
+            user = db.users.find_one({'userid':userid})
+            if 'timestamp' not in user:
+                db.users.update_one({'_id': user['_id']}, {'$set': {'timestamp': datetime.now()}})
+            #unoaction(checked,'1')
             return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount)
         if 'checkout' in request.form:
             userid = session['userid']
             lockers = session['lockers']
             amount = balance(userid)
-            checked_in = request.form.getlist('user_lockers')
-            db.users.update_one({'userid':userid}, {"$pull": {"checked_in":{'$in': checked_in}}})
-            db.lockers.update_one({},{'$push':{'available_lockers':{'$each': checked_in}}})
+            checked = request.form.getlist('user_lockers')
+            db.users.update_one({'userid':userid}, {"$unset": {f"checked_in.{locker}": "" for locker in checked}})
+            db.lockers.update_one({},{'$push':{'available_lockers':{'$each': checked}}})
+            user = db.users.find_one({'userid':userid})
+            if user['checked_in'] == {}:
+                db.users.update_one({'_id': user['_id']}, {'$unset': {'timestamp': ''}})
+            #unoaction(checked,'0')
             return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount)
         if 'logout' in request.form:
             session.pop('userid', None)
@@ -291,4 +303,4 @@ def testing():
     return redirect('/#')
 
 if(__name__=='__main__'):
-    app.run(debug = True)
+    app.run(debug = True, port = 5001)
