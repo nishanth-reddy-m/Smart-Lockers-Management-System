@@ -174,7 +174,7 @@ def login():
             amount = balance(userid)
             checked = request.form.getlist('global_lockers')
             db.lockers.update_one({},{'$pull':{'available_lockers':{'$in': checked}}})
-            db.users.update_one({'userid':userid}, {"$set": {"checked_in": {locker: datetime.now() for locker in checked}}})
+            db.users.update_one({'userid':userid}, {"$set": {f"checked_in.{locker}": datetime.now() for locker in checked}})
             user = db.users.find_one({'userid':userid})
             if 'timestamp' not in user:
                 db.users.update_one({'_id': user['_id']}, {'$set': {'timestamp': datetime.now()}})

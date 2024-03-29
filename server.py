@@ -28,6 +28,7 @@ mail = Mail(app)
 
 db = mongo.majorproject
 users = db.users
+deduction_amount = 1
 
 while True:
     all_users = users.find()
@@ -35,15 +36,16 @@ while True:
         if 'timestamp' not in user:
             continue
         else:
+            userid = user['userid']
             timestamp = user['timestamp']
             checked_in_lockers = len(user['checked_in'])
             time_difference = datetime.now() - timestamp
             minute_difference = int(time_difference.total_seconds() / 60)
             if minute_difference >= 1:
-                users.update_one({'_id': user['_id']}, {'$inc': {'wallet': -(minute_difference*checked_in_lockers)}})
-                print(f'Wallet amount debited at {datetime.now()}')
+                debit = minute_difference*deduction_amount*checked_in_lockers
+                users.update_one({'_id': user['_id']}, {'$inc': {'wallet': -debit}})
+                print(f'₹{debit} debited from {userid} at {datetime.now()}')
                 users.update_one({'_id': user['_id']}, {'$set': {'timestamp': datetime.now()}})
-    print(f'Server running, Last run : {datetime.now()}')
 
 if(__name__=='__main__'):
     app.run(debug = True, port = 5002)
