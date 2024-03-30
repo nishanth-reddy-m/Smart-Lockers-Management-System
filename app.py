@@ -1,9 +1,9 @@
 import os
 import random
+import smtplib
 from datetime import datetime
 #import serial
 from flask import *
-from flask_mail import Mail, Message
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
@@ -18,14 +18,21 @@ password = os.getenv('MAILPASSWORD')
 app=Flask(__name__)
 
 app.config["SECRET_KEY"] = 'project3141621'
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = username
-app.config['MAIL_PASSWORD'] = password
-app.config['MAIL_DEFAULT_SENDER'] = username
+
 mongo = MongoClient(mongodb)
-mail = Mail(app)
+
+def sendmail(userid,msg,status):
+    try:
+        mail = smtplib.SMTP('smtp.gmail.com',587)
+        mail.starttls()
+        mail.login(username,password)
+        message = msg.encode('utf-8')
+        mail.sendmail(username,userid,message)
+        return status
+    except Exception as e:
+        return f'Failed to send email: {str(e)}'
+    finally:
+        mail.close()
 
 @app.route('/')
 def home():
@@ -44,19 +51,16 @@ def register():
         else:
             userid=session['userid']
             otp = str(random.randint(100000,999999))
-            message = f'Your otp for verification is {otp}'
             session['otp']=otp
-            msg = Message(subject='Verification',
-                    recipients=[userid],
-                    body=message
-            )
-            try:
-                mail.send(msg)
-                flash('OTP Sent')
+            msg = f'Subject: Verification\n\nYour otp for verification is {otp}'
+            status = 'OTP Sent'
+            output = sendmail(userid,msg,status)
+            if output == status:
+                flash(f'{output}')
                 return render_template('register.html',userid=userid)
-            except Exception as e:
-                flash(f'Failed to send email: {str(e)}')
-                return render_template('register.html',userid=userid)
+            else:
+                flash(f'{output}')
+                return render_template('register.html', userid=userid, condition2='disabled')
     if 'verifyotp' in request.form:
         entered_otp=request.form['otp']
         otp=session['otp']
@@ -155,19 +159,23 @@ def login():
             userpass = request.form['userpass']
             user=db.users.find_one({'userid':userid,'userpass':userpass})
             if user:
-                wallet = balance(userid)
-                if wallet > 0:
-                    session['userid'] = userid
-                    amount = balance(userid)
-                    dblockers = db.lockers.find_one({},{'_id': 0, 'all_lockers': 1})
-                    lockers = dblockers['all_lockers']
-                    session['lockers'] = lockers
-                    return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount)
-                else:
-                    return render_template('balancecheck.html', amount=wallet)
+                session['userid'] = userid
+                amount = balance(userid)
+                dblockers = db.lockers.find_one({},{'_id': 0, 'all_lockers': 1})
+                lockers = dblockers['all_lockers']
+                session['lockers'] = lockers
+                return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount)
             else:
                 flash('Invalid UserID or Password')
                 return render_template('login.html', userid=userid)
+        if 'refresh' in request.form:
+            userid = session['userid']
+            amount = balance(userid)
+            dblockers = db.lockers.find_one({},{'_id': 0, 'all_lockers': 1})
+            lockers = dblockers['all_lockers']
+            session['lockers'] = lockers
+            return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount)
+
         if 'checkin' in request.form:
             userid = session['userid']
             lockers = session['lockers']
@@ -225,16 +233,14 @@ def reset():
         otp = str(random.randint(100000,999999))
         message = f'Your otp to reset password is {otp}'
         session['otp']=otp
-        msg = Message(subject='Verification',
-                recipients=[userid],
-                body=message
-        )
-        try:
-            mail.send(msg)
-            flash('OTP Sent')
+        msg = f'Subject: Verification\n\nYour otp for verification is {otp}'
+        status = 'OTP Sent'
+        output = sendmail(userid,msg,status)
+        if output == status:
+            flash(f'{output}')
             return render_template('reset.html', otpsent=True, userid=userid)
-        except Exception as e:
-            flash(f'Failed to send email: {str(e)}')
+        else:
+            flash(f'{output}')
             return render_template('reset.html', userid=userid)
     if 'verifyotp' in request.form:
         entered_otp=request.form['otp']
@@ -284,17 +290,14 @@ def reset():
         userid = session['userid']
         userpass = request.form['userpass']
         db.users.update_one({'userid':userid},{'$set':{'userpass':userpass}})
-        message = 'Your password has been successfully changed'
-        msg = Message(subject='Reset Password',
-                recipients=[userid],
-                body=message
-        )
-        try:
-            mail.send(msg)
+        msg = 'Your password has been successfully changed'
+        status = 'success'
+        output = sendmail(userid,msg,status)
+        if output == status:
             session.pop('userid', None)
             return render_template('resetsuccess.html')
-        except Exception as e:
-            flash(f'Failed to send email: {str(e)}')
+        else:
+            flash(f'{output}')
             return render_template('changepassword.html')
     return render_template('validate.html',display=True)
 

@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
 </head>
 <body style="padding: 0;">
-    <div class="centre info"><h2>Wallet Balance: <div {% if amount <= 30 %} style="display: inline; color:red" {% else %} style="display: inline;" {% endif %} >₹{{ amount }}</div></h2></div>
-    <div class="container" style="padding: 2%;width: 25%;min-width: 250px;">
+    <div class="centre info" style="margin: 0;"><h2>Wallet Balance: <div {% if amount <= 30 and amount > 0 %} style="display: inline; color:orangered" {% elif amount <= 0 %} style="display: inline; color:red" {% else %} style="display: inline;" {% endif %} >₹{{ amount }}<div style="display: inline;margin: 0;"><form method="post" class="info"><button type="submit" name="refresh" style="font-size: x-large;" >&nbsp; ↺</button></form></div></div></h2></div>
+    <div class="container" style="padding: 2%;width: 25%;min-width: 250px;margin-top: 0;">
         <h2>Your Lockers</h2>
         <form method="post">
             <ul>
