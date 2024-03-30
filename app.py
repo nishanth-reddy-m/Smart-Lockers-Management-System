@@ -92,7 +92,7 @@ def register():
                 'a3':a3,
                 },
             'checked_in':{},
-            'wallet':0 })
+            'wallet':0.0 })
         session.pop('userid', None)
         session.pop('otp', None)
         return render_template('registrationsuccess.html')
@@ -113,7 +113,7 @@ def recharge():
             return render_template('recharge.html',display=True, userid=userid)
     if 'pay' in request.form:
         userid = session['userid']
-        amount = int(request.form['amount'])
+        amount = float(request.form['amount'])
         db.users.update_one({'userid':userid}, {'$inc': {'wallet': amount}})
         wallet = balance(userid)
         session.pop('userid', None)
@@ -190,6 +190,7 @@ def login():
             user = db.users.find_one({'userid':userid})
             if user['checked_in'] == {}:
                 db.users.update_one({'_id': user['_id']}, {'$unset': {'timestamp': ''}})
+                db.users.update_one({'_id': user['_id']}, {'$unset': {'mail_threshold': ''}})
             #unoaction(checked,'0')
             return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount)
         if 'logout' in request.form:
