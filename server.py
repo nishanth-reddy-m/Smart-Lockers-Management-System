@@ -49,6 +49,7 @@ try:
                 minute_difference = int(time_difference.total_seconds() / 60)
                 if minute_difference >= 1:
                     debit = minute_difference*deduction_amount*checked_in_lockers
+                    deduction = deduction_amount*checked_in_lockers
                     users.update_one({'userid':userid}, {'$inc': {'wallet': -debit}})
                     print(f'₹{debit} debited from {userid} at {datetime.now()}')
                     users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now()}})

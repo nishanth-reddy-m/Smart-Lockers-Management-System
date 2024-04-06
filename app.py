@@ -143,6 +143,12 @@ def balance(userid):
     amount = dbamount['wallet']
     return amount
 
+def server():
+    db = mongo.majorproject
+    dbserver = db.lockers.find_one({},{'_id': 0, 'server': 1})
+    server_status = dbserver['server']
+    return server_status
+
 def unoaction(checked,Input):
     action = ''
     for locker in checked:
@@ -180,27 +186,47 @@ def login():
             userid = session['userid']
             lockers = session['lockers']
             amount = balance(userid)
-            checked = request.form.getlist('global_lockers')
-            db.lockers.update_one({},{'$pull':{'available_lockers':{'$in': checked}}})
-            db.users.update_one({'userid':userid}, {"$set": {f"checked_in.{locker}": datetime.now() for locker in checked}})
-            user = db.users.find_one({'userid':userid})
-            if 'timestamp' not in user:
-                db.users.update_one({'_id': user['_id']}, {'$set': {'timestamp': datetime.now()}})
-            #unoaction(checked,'1')
-            return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount)
+            server_status = server()
+            if server_status:
+                if amount > 0:
+                    checked = request.form.getlist('global_lockers')
+                    db.lockers.update_one({},{'$pull':{'available_lockers':{'$in': checked}}})
+                    db.users.update_one({'userid':userid}, {"$set": {f"checked_in.{locker}": datetime.now() for locker in checked}})
+                    user = db.users.find_one({'userid':userid})
+                    if 'timestamp' not in user:
+                        db.users.update_one({'_id': user['_id']}, {'$set': {'timestamp': datetime.now()}})
+                    #unoaction(checked,'1')
+                    alert = 'Please make sure to Logout.'
+                    return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert)
+                else:
+                    alert = 'Please recharge your Wallet to CheckIn'
+                    return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert)
+            else:
+                alert = 'Unable to reach Server'
+                return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert)
         if 'checkout' in request.form:
             userid = session['userid']
             lockers = session['lockers']
             amount = balance(userid)
-            checked = request.form.getlist('user_lockers')
-            db.users.update_one({'userid':userid}, {"$unset": {f"checked_in.{locker}": "" for locker in checked}})
-            db.lockers.update_one({},{'$push':{'available_lockers':{'$each': checked}}})
-            user = db.users.find_one({'userid':userid})
-            if user['checked_in'] == {}:
-                db.users.update_one({'_id': user['_id']}, {'$unset': {'timestamp': ''}})
-                db.users.update_one({'_id': user['_id']}, {'$unset': {'mail_threshold': ''}})
-            #unoaction(checked,'0')
-            return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount)
+            server_status = server()
+            if server_status:
+                if amount >= 0:
+                    checked = request.form.getlist('user_lockers')
+                    db.users.update_one({'userid':userid}, {"$unset": {f"checked_in.{locker}": "" for locker in checked}})
+                    db.lockers.update_one({},{'$push':{'available_lockers':{'$each': checked}}})
+                    user = db.users.find_one({'userid':userid})
+                    if user['checked_in'] == {}:
+                        db.users.update_one({'_id': user['_id']}, {'$unset': {'timestamp': ''}})
+                        db.users.update_one({'_id': user['_id']}, {'$unset': {'mail_threshold': ''}})
+                    #unoaction(checked,'0')
+                    alert = 'Please make sure to Logout.'
+                    return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert)
+                else:
+                    alert = 'Please recharge your Wallet to CheckOut'
+                    return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert)
+            else:
+                alert = 'Unable to reach Server'
+                return render_template('interface.html',lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert)
         if 'logout' in request.form:
             session.pop('userid', None)
             session.pop('lockers', None)
