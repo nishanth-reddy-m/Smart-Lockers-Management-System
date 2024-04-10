@@ -14,11 +14,7 @@ password = os.getenv('MAILPASSWORD')
 #arduino = serial.Serial('COM5',9600)
 
 mongo = MongoClient(mongodb)
-
 db = mongo.majorproject
-users = db.users
-lockers = db.lockers
-deduction_amount = 0.5
 
 def sendmail(userid,msg,status):
     try:
@@ -34,10 +30,11 @@ def sendmail(userid,msg,status):
         mail.close()
 
 try:
-    lockers.update_one({}, {'$set': {'server': True}})
+    db.lockers.update_one({}, {'$set': {'server': True}})
     print('Server Started')
+    deduction_amount = db.lockers.find_one({})['payable']
     while True:
-        all_users = users.find()
+        all_users = db.users.find()
         for user in all_users:
             if 'timestamp' not in user:
                 continue
@@ -50,10 +47,10 @@ try:
                 if minute_difference >= 1:
                     debit = minute_difference*deduction_amount*checked_in_lockers
                     deduction = deduction_amount*checked_in_lockers
-                    users.update_one({'userid':userid}, {'$inc': {'wallet': -debit}})
+                    db.users.update_one({'userid':userid}, {'$inc': {'wallet': -debit}})
                     print(f'₹{debit} debited from {userid} at {datetime.now()}')
-                    users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now()}})
-                    dbuser = users.find_one({'userid':userid})
+                    db.users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now()}})
+                    dbuser = db.users.find_one({'userid':userid})
                     balance = dbuser['wallet']
                     if balance <= 30:
                         if 'mail_threshold' not in dbuser:
@@ -62,7 +59,7 @@ try:
                             output = sendmail(userid,msg,status)
                             if output == status:
                                 print(output)
-                                users.update_one({'userid':userid}, {'$set': {'mail_threshold':datetime.now()}})
+                                db.users.update_one({'userid':userid}, {'$set': {'mail_threshold':datetime.now()}})
                             else:
                                 print(output)
                         else:
@@ -75,10 +72,10 @@ try:
                                 output = sendmail(userid,msg,status)
                                 if output == status:
                                     print(output)
-                                    users.update_one({'userid':userid}, {'$set': {'mail_threshold':datetime.now()}})
+                                    db.users.update_one({'userid':userid}, {'$set': {'mail_threshold':datetime.now()}})
                                 else:
                                     print(output)
 finally:
-    lockers.update_one({}, {'$set': {'server': False}})
+    db.lockers.update_one({}, {'$set': {'server': False}})
     print(f'Server Stopped')
     exit()

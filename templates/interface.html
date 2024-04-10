@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
 </head>
 <body style="padding: 0;">
-    <div class="centre info" style="margin: 0"><h2>Wallet Balance: <div {% if amount <= 30 and amount > 0 %} style="display: inline; color:rgb(255, 100, 0)" {% elif amount <= 0 %} style="display: inline; color:red" {% else %} style="display: inline;" {% endif %} >₹{{ amount }}<div style="display: inline;margin: 0;"><form method="post" class="info"><button type="submit" name="refresh" style="font-size: x-large;margin: 0;" >&nbsp; ↺</button></form></div></div></h2></div>
+    <div class="centre info" style="color: grey;">{{userid}}</div>
+    <div class="centre info" style="margin: 5px;"><h2>Wallet Balance: <div id="userbalance" style="display: inline;"></div></h2></div>
     <div class="container" style="padding: 2%;width: 25%;min-width: 250px;margin: 0;">
         <h2>Your Lockers</h2>
         <form method="post">
@@ -29,10 +30,11 @@
                 {% for locker in lockers %}
                 <li>
                     <input type="checkbox" id="global_{{locker}}" name="global_lockers" value="{{locker}}" {% if public_disabled(locker) %}disabled{% endif %}>
-                    <label class="checkbox {% if public_disabled(locker) %}disabled{% endif %}" for="global_{{locker}}" data-number="{{locker}}"></label>
+                    <label class="checkbox {% if public_disabled(locker) %}disabled{% endif %}" for="global_{{locker}}" data-number="{{locker}}" style="margin-bottom: 0;"></label>
                 </li>
                 {% endfor %}
             </ul>
+            <div class="centre"><div class="info" id="payable"></div></div>
             <div class="centre"><button type="submit" class="mainbutton" name="checkin" disabled>Check IN</button></div>
         </form>
     </div>
@@ -46,12 +48,50 @@
 </script>
 {% endif %}
 <script>
+    function fetchbalance()
+    {
+        var ajax = new XMLHttpRequest();
+        ajax.open('POST','/fetchbalance',true);
+
+        ajax.onload = function()
+        {
+            var userbalance = document.getElementById('userbalance');
+            var data = JSON.parse(ajax.responseText);
+            data = data.balance;
+            if (data <= 30 && data > 0)
+            {
+                userbalance.style.color = 'rgb(255, 100, 0)';
+                userbalance.innerHTML = '₹'+data;
+            }
+            else if (data <= 0)
+            {
+                userbalance.style.color = 'red';
+                userbalance.innerHTML = '₹'+data;
+            }
+            else
+            {
+                userbalance.innerHTML = '₹'+data;
+            }
+        }
+        ajax.onerror = function()
+        {
+            var userbalance = document.getElementById('userbalance');
+            userbalance.style.color = 'red'
+            userbalance.innerHTML = 'error'
+        }
+        ajax.send();
+    }
+    fetchbalance();
+    setInterval(fetchbalance,60000);
+</script>
+<script>
     function updateButtonState() {
         var user_checkbox = document.querySelectorAll('input[name="user_lockers"]');
         var global_checkbox = document.querySelectorAll('input[name="global_lockers"]');
         var checkinButton = document.querySelector('button[name="checkin"]');
         var checkoutButton = document.querySelector('button[name="checkout"]');
         var user_checkedCount = 0, global_checkedCount = 0;
+        var payable_amount = document.getElementById('payable');
 
         global_checkbox.forEach(function(checkbox) {
             if (checkbox.checked) {
@@ -72,8 +112,10 @@
         }
 
         if (global_checkedCount > 0) {
+            payable_amount.textContent = '₹'+global_checkedCount*{{payable}}+'/min'+' | '+'₹'+global_checkedCount*{{payable}}*60+'/hr';
             checkinButton.removeAttribute('disabled');
         } else {
+            payable_amount.textContent = ''
             checkinButton.setAttribute('disabled', 'disabled');
         }
     }
