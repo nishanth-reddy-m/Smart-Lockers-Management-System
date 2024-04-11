@@ -58,6 +58,10 @@
             var userbalance = document.getElementById('userbalance');
             var data = JSON.parse(ajax.responseText);
             data = data.balance;
+            if (data === 'error')
+            {
+                window.location.href = "/login";
+            }
             if (data <= 30 && data > 0)
             {
                 userbalance.style.color = 'rgb(255, 100, 0)';
@@ -76,8 +80,8 @@
         ajax.onerror = function()
         {
             var userbalance = document.getElementById('userbalance');
-            userbalance.style.color = 'red'
-            userbalance.innerHTML = 'error'
+            userbalance.style.color = 'red';
+            userbalance.innerHTML = 'error';
         }
         ajax.send();
     }

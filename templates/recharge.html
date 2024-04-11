@@ -15,23 +15,59 @@
         {% if valid %}
             <div class="inline centre">
                 <form method="POST" style="margin: 0;">
-                <label for="amount">Amount:</label><br>
+                <label for="amount">Amount: [Current Balance: <div id="userbalance" style="display: inline;"></div>]</label><br>
                 <input type="number" step="any" name="amount" id="amount" placeholder="Enter Recharge Amount" autocomplete="off" min="1" required><br><br>
                 <div class="centre"><button class="mainbutton" type="submit" name="pay" style="margin-bottom: 0;">Pay</button></div>
                 </form>
             </div>
         {% endif %}
-        <div class="centre">
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    {% for message in messages %}
-                    <div class="info" style="margin-top: 5%;">
-                        {{message}}
-                    </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
     </div>
     <form action="/"><div class="centre"><button class="mainbutton" type="submit" name="home">Home</button></div></form><br>
+    <script>
+        function fetchbalance()
+        {
+            var ajax = new XMLHttpRequest();
+            ajax.open('POST','/balancerecharge',true);
+    
+            ajax.onload = function()
+            {
+                var userbalance = document.getElementById('userbalance');
+                var data = JSON.parse(ajax.responseText);
+                data = data.balance;
+                if (data === 'error')
+                {
+                    window.location.href = '/recharge';
+                }
+                else
+                {
+                    if (data <= 30 && data > 0)
+                    {
+                        userbalance.style.color = 'rgb(255, 100, 0)';
+                        userbalance.innerHTML = '₹'+data;
+                    }
+                    else if (data <= 0)
+                    {
+                        userbalance.style.color = 'red';
+                        userbalance.innerHTML = '₹'+data;
+                    }
+                    else
+                    {
+                        userbalance.innerHTML = '₹'+data;
+                    }
+            
+                }
+            }
+            ajax.onerror = function()
+            {
+                var userbalance = document.getElementById('userbalance');
+                userbalance.style.color = 'red';
+                userbalance.innerHTML = 'error';
+            }
+            ajax.send();
+        }
+        {% if valid %}
+        fetchbalance();
+        setInterval(fetchbalance,60000);
+        {% endif %}
+    </script>
 {% endblock %}

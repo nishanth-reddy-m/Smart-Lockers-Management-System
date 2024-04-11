@@ -17,16 +17,5 @@
             <div class="centre"><button class="mainbutton" type="submit" name="login">Submit</button></div>
         </form>
         <div class="centre"><div class="info"><a href="/reset" style="text-decoration: none;">Forgot/Reset Password</a><span>&nbsp; | &nbsp;</span><a href="/register" style="text-decoration: none;">Register</a><span>&nbsp; | &nbsp;</span><a href="/" style="text-decoration: none;">Home</a></div></div>
-        <div class="centre">
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    {% for message in messages %}
-                    <div class="info" style="margin-top: 5%;">
-                        {{message}}
-                    </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
     </div>
 {% endblock %}
