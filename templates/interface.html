@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interface</title>
-    <link rel="stylesheet" href="{{url_for('static',filename='styles.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body style="padding: 0;">
     <div class="centre info" style="color: grey;">{{userid}}</div>
@@ -40,14 +40,11 @@
     </div>
     <div class="centre"><form method="post"><button type="submit" class="mainbutton" name="logout">Logout</button></form></div>
 </body>
-{% if alert %}
 <script>
-    setTimeout(function() {
-        alert('{{alert}}');
-    }, 500);
-</script>
-{% endif %}
-<script>
+    {% if alert %}
+    setTimeout(function() { alert('{{alert}}'); }, 500);
+    {% endif %}
+
     function fetchbalance()
     {
         var ajax = new XMLHttpRequest();
@@ -62,19 +59,22 @@
             {
                 window.location.href = "/login";
             }
-            if (data <= 30 && data > 0)
-            {
-                userbalance.style.color = 'rgb(255, 100, 0)';
-                userbalance.innerHTML = '₹'+data;
-            }
-            else if (data <= 0)
-            {
-                userbalance.style.color = 'red';
-                userbalance.innerHTML = '₹'+data;
-            }
             else
             {
-                userbalance.innerHTML = '₹'+data;
+                if (data <= 30 && data > 0)
+                {
+                    userbalance.style.color = 'rgb(255, 100, 0)';
+                    userbalance.innerHTML = '₹'+data;
+                }
+                else if (data <= 0)
+                {
+                    userbalance.style.color = 'red';
+                    userbalance.innerHTML = '₹'+data;
+                }
+                else
+                {
+                    userbalance.innerHTML = '₹'+data;
+                }
             }
         }
         ajax.onerror = function()
@@ -86,9 +86,8 @@
         ajax.send();
     }
     fetchbalance();
-    setInterval(fetchbalance,60000);
-</script>
-<script>
+    setInterval(fetchbalance,1000);
+
     function updateButtonState() {
         var user_checkbox = document.querySelectorAll('input[name="user_lockers"]');
         var global_checkbox = document.querySelectorAll('input[name="global_lockers"]');

@@ -38,10 +38,11 @@ def sendmail(userid,msg,status):
 
 @app.route('/')
 def home():
-    if 'log_userid' in session or 'reg_userid' in session or 'rec_userid' in session or 'res_userid' in session:
+    if 'log_userid' in session or 'reg_userid' in session or 'rec_userid' in session or 'res_userid' in session or 'log_user' in session:
         session.pop('reg_userid', None)
         session.pop('reg_otp', None)
         session.pop('rec_userid', None)
+        session.pop('log_user', None)
         session.pop('log_userid', None)
         session.pop('log_lockers', None)
         session.pop('res_userid', None)
@@ -78,7 +79,7 @@ def register():
     if 'reg_userid' in session:
         if 'verifyotp' in request.form:
             if 'reg_otp' not in session:
-                return redirect('/register',alert = session_error)
+                return redirect('/register')
             entered_otp=request.form['otp']
             otp=session['reg_otp']
             if(entered_otp == otp):
@@ -116,7 +117,7 @@ def register():
                 'wallet':0.0 })
             session.pop('reg_userid', None)
             return render_template('registrationsuccess.html')
-    return render_template('register.html',condition2='disabled',alert = session_error)
+    return render_template('register.html',condition2='disabled')
 
 @app.route('/balancerecharge', methods=['POST'])
 def balancerecharge():
@@ -142,10 +143,14 @@ def recharge():
         if 'pay' in request.form:
             userid = session['rec_userid']
             amount = float(request.form['amount'])
-            db.users.update_one({'userid':userid}, {'$inc': {'wallet': amount}})
-            wallet = db.users.find_one({'userid':userid})['wallet']
-            session.pop('rec_userid', None)
-            return render_template('rechargesuccess.html', wallet=wallet)
+            if amount > 0:
+                db.users.update_one({'userid':userid}, {'$inc': {'wallet': amount}})
+                wallet = db.users.find_one({'userid':userid})['wallet']
+                session.pop('rec_userid', None)
+                return render_template('rechargesuccess.html', wallet=wallet)
+            else:
+                alert = 'Invalid Amount'
+                return render_template('recharge.html', userid=userid, valid=True, condition='disabled', display=False, alert=alert)
     return render_template('recharge.html', display=True)
 
 def private_disabled(locker):
@@ -178,27 +183,35 @@ def fetchbalance():
 def login():
     if 'log_userid' in session:
         session.pop('log_userid', None)
-        session.pop('log_lockers', None)
-        return redirect('/login')
-    if 'login' in request.form:
+        return render_template('login.html', alert=session_error)
+    if 'usercheck' in request.form:
         userid = request.form['userid']
-        userpass = request.form['userpass']
-        user=db.users.find_one({'userid':userid,'userpass':userpass})
+        user=db.users.find_one({'userid':userid})['userid']
         if user:
-            session['log_userid'] = userid
-            amount = db.users.find_one({'userid':userid})['wallet']
-            lockers = db.lockers.find_one({})['all_lockers']
-            session['log_lockers'] = lockers
-            return redirect('/login/console')
+            session['log_user'] = user
+            return render_template('login.html', userid=userid, displaypass=True)
         else:
-            alert = 'Invalid UserID or Password'
+            alert = 'Invalid UserID'
             return render_template('login.html', userid=userid, alert=alert)
-    return render_template('login.html')
+    if 'log_user' in session:
+        if 'login' in request.form:
+            userid = session['log_user']
+            userpass = request.form['userpass']
+            if db.users.find_one({'userid':userid, 'userpass':userpass}):
+                session['log_userid'] = userid
+                session.pop('log_user', None)
+                return render_template('loginconsole.html')
+            else:
+                alert = 'Invalid Password'
+                return render_template('login.html', userid=userid, displaypass=True, alert=alert)
+        return redirect('/')
+    else:
+        return render_template('login.html')
 
 @app.route('/login/console', methods=['GET','POST'])
 def console():
     if 'log_userid' not in session:
-        return redirect('/login')
+        return redirect('/')
     try:
         payable = db.lockers.find_one({})['payable']
         userid = session['log_userid']
@@ -268,104 +281,103 @@ def console():
 
 @app.route('/reset', methods=['GET','POST'])
 def reset():
-    if 'next' in request.form:
-        userid = request.form['userid']
-        exists = db.users.find_one({'userid':userid})
-        if exists:
-            session['res_userid'] = userid
+    try:
+        if 'log_user' in session:
+            userid = session['res_userid'] = session['log_user']
+            session.pop('log_user', None)
             return render_template('validate.html', userid=userid, valid=True, condition='disabled', display=False)
-        else:
-            alert = "User don't exist"
-            return render_template('validate.html',display=True, userid=userid, alert=alert)
-    if 'res_userid' in session:
-        if 'check' in request.form:
-            userid = session['res_userid']
-            username = request.form['username']
-            exists = db.users.find_one({'userid':userid, 'username':username.lower()})
+        if 'next' in request.form:
+            userid = request.form['userid']
+            exists = db.users.find_one({'userid':userid})
             if exists:
-                return render_template('reset.html',userid=userid)
+                session['res_userid'] = userid
+                return render_template('validate.html', userid=userid, valid=True, condition='disabled', display=False)
             else:
-                alert = 'Incorrect Username'
-                return render_template('validate.html', userid=userid, username=username, valid=True, condition='disabled', alert=alert)
-        if 'sendotp' in request.form:
-            userid = session['res_userid']
-            otp = str(random.randint(100000,999999))
-            session['res_otp']=otp
-            msg = f'Subject: Verification\n\nYour otp for verification is {otp}'
-            status = 'OTP Sent'
-            output = sendmail(userid,msg,status)
-            if output == status:
-                alert = f'{output}'
-                return render_template('reset.html', otpsent=True, userid=userid, alert=alert)
-            else:
-                alert = f'{output}'
-                return render_template('reset.html', userid=userid, alert=alert)
-        if 'verifyotp' in request.form:
-            entered_otp=request.form['otp']
-            otp=session['res_otp']
-            userid = session['res_userid']
-            if(entered_otp == otp):
-                session.pop('res_otp', None)
-                return render_template('changepassword.html')
-            else:
-                alert = 'Incorrect OTP. Please try again'
-                return render_template('reset.html',otpsent=True,userid=userid, alert=alert)
-        if 'securityquestions' in request.form:
-            userid = session['res_userid']
-            dbqanda = db.users.find_one({'userid':userid}, {'_id': 0, 'qanda': 1})
-            qanda = dbqanda['qanda']
-            session['res_qanda'] = qanda
-            q1 = qanda['q1']
-            q2 = qanda['q2']
-            q3 = qanda['q3']
-            return render_template('reset.html', answersq=True, userid=userid, q1=q1, q2=q2, q3=q3)
-        if 'verifyanswers' in request.form:
-            userid = session['res_userid']
-            qanda = session['res_qanda']
-            a1 = request.form['a1']
-            a2 = request.form['a2']
-            a3 = request.form['a3']
-            session['res_a1'] = a1
-            session['res_a2'] = a2
-            session['res_a3'] = a3
-            if a1.lower().replace(" ", "") == qanda['a1'] and a2.lower().replace(" ", "") == qanda['a2'] and a3.lower().replace(" ", "") == qanda['a3']:
-                session.pop('res_qanda', None)
-                session.pop('res_a1', None)
-                session.pop('res_a2', None)
-                session.pop('res_a3', None)
-                return render_template('changepassword.html')
-            else:
-                qanda = session['res_qanda']
+                alert = "User don't exist"
+                return render_template('validate.html',display=True, userid=userid, alert=alert)
+        if 'res_userid' in session:
+            if 'check' in request.form:
+                userid = session['res_userid']
+                username = request.form['username']
+                exists = db.users.find_one({'userid':userid, 'username':username.lower()})
+                if exists:
+                    return render_template('reset.html',userid=userid)
+                else:
+                    alert = 'Incorrect Username'
+                    return render_template('validate.html', userid=userid, username=username, valid=True, condition='disabled', alert=alert)
+            if 'sendotp' in request.form:
+                userid = session['res_userid']
+                otp = str(random.randint(100000,999999))
+                session['res_otp']=otp
+                msg = f'Subject: Verification\n\nYour otp for verification is {otp}'
+                status = 'OTP Sent'
+                output = sendmail(userid,msg,status)
+                if output == status:
+                    alert = f'{output}'
+                    return render_template('reset.html', otpsent=True, userid=userid, alert=alert)
+                else:
+                    alert = f'{output}'
+                    return render_template('reset.html', userid=userid, alert=alert)
+            if 'verifyotp' in request.form:
+                entered_otp=request.form['otp']
+                otp=session['res_otp']
+                userid = session['res_userid']
+                if(entered_otp == otp):
+                    session.pop('res_otp', None)
+                    return render_template('changepassword.html')
+                else:
+                    alert = 'Incorrect OTP. Please try again'
+                    return render_template('reset.html',otpsent=True,userid=userid, alert=alert)
+            if 'securityquestions' in request.form:
+                userid = session['res_userid']
+                dbqanda = db.users.find_one({'userid':userid}, {'_id': 0, 'qanda': 1})
+                qanda = dbqanda['qanda']
+                session['res_qanda'] = qanda
                 q1 = qanda['q1']
                 q2 = qanda['q2']
                 q3 = qanda['q3']
-                a1 = session['res_a1']
-                a2 = session['res_a2']
-                a3 = session['res_a3']
-                alert = "Incorrect Answer(s)!"
-                return render_template('reset.html', answersq=True, userid=userid, q1=q1, q2=q2, q3=q3, a1=a1, a2=a2, a3=a3, alert=alert)
-        if 'change' in request.form:
-            userid = session['res_userid']
-            userpass = request.form['userpass']
-            db.users.update_one({'userid':userid},{'$set':{'userpass':userpass}})
-            msg = 'Subject: Password Reset\n\nYour password has been successfully changed'
-            status = 'success'
-            output = sendmail(userid,msg,status)
-            session.pop('res_userid', None)
-            if output == status:
-                return render_template('resetsuccess.html')
-            else:
-                alert = f'{output}'
-                return render_template('resetsuccess.html', alert=alert)
-        if 'back' in request.form:
-            session.pop('res_userid', None)
-            session.pop('res_otp', None)
-            session.pop('res_qanda', None)
-            session.pop('res_a1', None)
-            session.pop('res_a2', None)
-            session.pop('res_a3', None)
-            return redirect('/reset')
-    return render_template('validate.html',display=True)
+                return render_template('reset.html', answersq=True, userid=userid, q1=q1, q2=q2, q3=q3)
+            if 'verifyanswers' in request.form:
+                userid = session['res_userid']
+                qanda = session['res_qanda']
+                a1 = request.form['a1']
+                a2 = request.form['a2']
+                a3 = request.form['a3']
+                session['res_a1'] = a1
+                session['res_a2'] = a2
+                session['res_a3'] = a3
+                if a1.lower().replace(" ", "") == qanda['a1'] and a2.lower().replace(" ", "") == qanda['a2'] and a3.lower().replace(" ", "") == qanda['a3']:
+                    session.pop('res_qanda', None)
+                    session.pop('res_a1', None)
+                    session.pop('res_a2', None)
+                    session.pop('res_a3', None)
+                    return render_template('changepassword.html')
+                else:
+                    qanda = session['res_qanda']
+                    q1 = qanda['q1']
+                    q2 = qanda['q2']
+                    q3 = qanda['q3']
+                    a1 = session['res_a1']
+                    a2 = session['res_a2']
+                    a3 = session['res_a3']
+                    alert = "Incorrect Answer(s)!"
+                    return render_template('reset.html', answersq=True, userid=userid, q1=q1, q2=q2, q3=q3, a1=a1, a2=a2, a3=a3, alert=alert)
+            if 'change' in request.form:
+                userid = session['res_userid']
+                userpass = request.form['userpass']
+                db.users.update_one({'userid':userid},{'$set':{'userpass':userpass}})
+                msg = 'Subject: Password Reset\n\nYour password has been successfully changed'
+                status = 'success'
+                output = sendmail(userid,msg,status)
+                session.pop('res_userid', None)
+                if output == status:
+                    return render_template('resetsuccess.html')
+                else:
+                    alert = f'{output}'
+                    return render_template('resetsuccess.html', alert=alert)
+        return render_template('validate.html',display=True)
+    except KeyError:
+        return redirect('/')
 
 @app.route('/testing', methods=['GET','POST'])
 def testing():
