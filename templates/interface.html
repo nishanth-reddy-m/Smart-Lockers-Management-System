@@ -16,7 +16,7 @@
                 {% for locker in lockers %}
                 <li>
                     <input type="checkbox" id="user_{{locker}}" name="user_lockers" value="{{locker}}" {% if private_disabled(locker) %}disabled{% endif %}>
-                    <label class="checkbox {% if private_disabled(locker) %}disabled{% endif %}" for="user_{{locker}}" data-number="{{locker}}"></label>
+                    <label class="checkbox" for="user_{{locker}}" data-number="{{locker}}"></label>
                 </li>
                 {% endfor %}
             </ul>
@@ -30,7 +30,7 @@
                 {% for locker in lockers %}
                 <li>
                     <input type="checkbox" id="global_{{locker}}" name="global_lockers" value="{{locker}}" {% if public_disabled(locker) %}disabled{% endif %}>
-                    <label class="checkbox {% if public_disabled(locker) %}disabled{% endif %}" for="global_{{locker}}" data-number="{{locker}}" style="margin-bottom: 0;"></label>
+                    <label class="checkbox" for="global_{{locker}}" data-number="{{locker}}" style="margin-bottom: 0;"></label>
                 </li>
                 {% endfor %}
             </ul>
@@ -54,26 +54,26 @@
         {
             var userbalance = document.getElementById('userbalance');
             var data = JSON.parse(ajax.responseText);
-            data = data.balance;
-            if (data === 'error')
+            var balance = data.balance;
+            if (balance === 'error')
             {
                 window.location.href = "/login";
             }
             else
             {
-                if (data <= 30 && data > 0)
+                if (balance <= 30 && balance > 0)
                 {
                     userbalance.style.color = 'rgb(255, 100, 0)';
-                    userbalance.innerHTML = '₹'+data;
+                    userbalance.innerHTML = '₹'+balance;
                 }
-                else if (data <= 0)
+                else if (balance <= 0)
                 {
                     userbalance.style.color = 'red';
-                    userbalance.innerHTML = '₹'+data;
+                    userbalance.innerHTML = '₹'+balance;
                 }
                 else
                 {
-                    userbalance.innerHTML = '₹'+data;
+                    userbalance.innerHTML = '₹'+balance;
                 }
             }
         }
