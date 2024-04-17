@@ -55,6 +55,7 @@ while True:
                 debit = minute_difference*deduction_amount*checked_in_lockers
                 deduction = deduction_amount*checked_in_lockers
                 db.users.update_one({'userid':userid}, {'$inc': {'wallet': -debit}})
+                db.users.update_one({'userid':userid}, {'$set': {'debit_status': True}})
                 print(f'₹{debit} debited from {userid} at {datetime.now()}')
                 db.users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now()}})
                 dbuser = db.users.find_one({'userid':userid})

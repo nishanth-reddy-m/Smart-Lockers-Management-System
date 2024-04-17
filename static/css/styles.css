@@ -99,6 +99,18 @@ label.checkbox:after {
   top: 50%;
   transform: translate(-50%, -50%);
 }
+table {
+  border-collapse: collapse;
+  width: auto;
+}
+th, td {
+  
+  text-align: center;
+  padding: 8px;
+}
+th {
+  font-size: medium;
+}
 .container{
   border: 1px solid black;
   border-radius: 5px;

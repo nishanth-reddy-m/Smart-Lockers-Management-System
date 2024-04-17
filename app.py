@@ -92,7 +92,7 @@ def register():
                 return render_template('register.html',userid=userid, alert=alert)
         if 'register' in request.form:
             userid = session['reg_userid']
-            username = request.form['username'].lower()
+            username = request.form['username']
             userpass = request.form['userpass']
             checkpass = request.form['checkpass']
             q1 = request.form['question1']
@@ -114,6 +114,7 @@ def register():
                     'a3':a3,
                     },
                 'checked_in':{},
+                'debit_status':False,
                 'wallet':0.0 })
             session.pop('reg_userid', None)
             return render_template('registrationsuccess.html')
@@ -145,6 +146,8 @@ def recharge():
             amount = float(request.form['amount'])
             if amount > 0:
                 db.users.update_one({'userid':userid}, {'$inc': {'wallet': amount}})
+                credit_log = [amount,datetime.now()]
+                db.users.update_one({'userid': userid}, {'$push': {'credit_log': credit_log}})
                 wallet = db.users.find_one({'userid':userid})['wallet']
                 session.pop('rec_userid', None)
                 return render_template('rechargesuccess.html', wallet=wallet)
@@ -170,6 +173,37 @@ def unoaction(checked,Input):
     arduino.write(action.encode('utf-8'))
     receive = arduino.readline().decode().strip()
 
+def setlog(userid,checked):
+    lockers = db.users.find_one({'userid':userid})['checked_in']
+    payable = db.lockers.find_one({})['payable']
+    user_log = []
+    for locker in checked:
+        if locker in lockers:
+            checkin = lockers[locker]
+            checkout = datetime.now()
+            checked_time = checkout - checkin
+            amount = int(checked_time.total_seconds() / 60)*payable
+            user_log.append([locker,checkin,checkout,amount])
+    db.users.update_one({'userid': userid}, {'$push': {'debit_log': {'$each': user_log}}})
+
+def creditlog():
+    userid = session['log_userid']
+    user = db.users.find_one({'userid':userid})
+    if 'credit_log' in user:
+        logs = user['credit_log']
+        return logs
+    else:
+        return
+
+def debitlog():
+    userid = session['log_userid']
+    user = db.users.find_one({'userid':userid})
+    if 'debit_log' in user:
+        logs = user['debit_log']
+        return logs
+    else:
+        return
+
 @app.route('/fetchbalance', methods=['POST'])
 def fetchbalance():
     if 'log_userid' in session:
@@ -186,9 +220,9 @@ def login():
         return render_template('login.html', alert=session_error)
     if 'usercheck' in request.form:
         userid = request.form['userid']
-        user=db.users.find_one({'userid':userid})['userid']
+        user=db.users.find_one({'userid':userid})
         if user:
-            session['log_user'] = user
+            session['log_user'] = user['userid']
             return render_template('login.html', userid=userid, displaypass=True)
         else:
             alert = 'Invalid UserID'
@@ -233,17 +267,17 @@ def console():
                         if 'timestamp' not in user:
                             db.users.update_one({'_id': user['_id']}, {'$set': {'timestamp': datetime.now()}})
                         #unoaction(checked,'1')
-                        alert = 'Please make sure to Logout.'
-                        return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert, payable=payable)
+                        flash('Please make sure to Logout')
+                        return redirect(url_for('console'))
                     else:
-                        alert = 'Locker unavailable'
-                        return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert, payable=payable)
+                        flash('Locker unavailable')
+                        return redirect(url_for('console'))
                 else:
-                    alert = 'Please recharge your Wallet to CheckIn'
-                    return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert, payable=payable)
+                    flash('Please recharge your Wallet to CheckIn')
+                    return redirect(url_for('console'))
             else:
-                alert = 'Unable to reach Server'
-                return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert, payable=payable)
+                flash('Unable to reach Server')
+                return redirect(url_for('console'))
         if 'checkout' in request.form:
             userid = session['log_userid']
             lockers = session['log_lockers']
@@ -253,29 +287,32 @@ def console():
                     checked = request.form.getlist('user_lockers')
                     user_lockers = db.users.find_one({'userid':userid})['checked_in']
                     if all(locker in user_lockers for locker in checked):
+                        if db.users.find_one({'userid':userid})['debit_status']:
+                            setlog(userid,checked)
                         db.users.update_one({'userid':userid}, {"$unset": {f"checked_in.{locker}": "" for locker in checked}})
                         db.lockers.update_one({},{'$push':{'available_lockers':{'$each': checked}}})
                         user = db.users.find_one({'userid':userid})
                         if user['checked_in'] == {}:
                             db.users.update_one({'_id': user['_id']}, {'$unset': {'timestamp': ''}})
                             db.users.update_one({'_id': user['_id']}, {'$unset': {'mail_threshold': ''}})
+                            db.users.update_one({'userid':userid}, {'$set': {'debit_status': False}})
                         #unoaction(checked,'0')
-                        alert = 'Please make sure to Logout.'
-                        return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert, payable=payable)
+                        flash('Please make sure to Logout')
+                        return redirect(url_for('console'))
                     else:
-                        alert = 'Locker already checked out'
-                        return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert, payable=payable)
+                        flash('Locker already checked out')
+                        return redirect(url_for('console'))
                 else:
-                    alert = 'Please recharge your Wallet to CheckOut'
-                    return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert, payable=payable)
+                    flash('Please recharge your Wallet to CheckOut')
+                    return redirect(url_for('console'))
             else:
-                alert = 'Unable to reach Server'
-                return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, alert=alert, payable=payable)
+                flash('Unable to reach Server')
+                return redirect(url_for('console'))
         if 'logout' in request.form:
             session.pop('log_userid', None)
             session.pop('log_lockers', None)
             return redirect('/')
-        return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, amount=amount, payable=payable)
+        return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, creditlog=creditlog, debitlog=debitlog, amount=amount, payable=payable)
     except KeyError:
         return redirect('/login')
 
@@ -298,9 +335,9 @@ def reset():
         if 'res_userid' in session:
             if 'check' in request.form:
                 userid = session['res_userid']
-                username = request.form['username']
-                exists = db.users.find_one({'userid':userid, 'username':username.lower()})
-                if exists:
+                dbusername = db.users.find_one({'userid':userid})['username'].lower()
+                username = request.form['username'].lower()
+                if dbusername == username:
                     return render_template('reset.html',userid=userid)
                 else:
                     alert = 'Incorrect Username'
@@ -381,8 +418,13 @@ def reset():
 
 @app.route('/testing', methods=['GET','POST'])
 def testing():
-    available_lockers = db.lockers.find_one({})['available_lockers']
-    return jsonify(available_lockers)
+    userid = 'nishanth.reddym004@gmail.com'
+    check = ['1','2']
+    checked = db.users.find_one({'userid':user['userid']},{f'checked_in.{locker}': 1 for locker in check})
+    table = []
+    for locker_num,checkin_time in checked.items():
+        table.append([locker_num,checkin_time,datetime.now()])
+    return render_template('index.html', table=table)
 
 if(__name__=='__main__'):
     app.run(debug = True)
