@@ -2,7 +2,6 @@ import os
 import random
 import smtplib
 from datetime import datetime
-#import serial
 from flask import *
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -12,8 +11,6 @@ load_dotenv()
 mongodb = os.getenv('MONGODB')
 username = os.getenv('MAILUSERNAME')
 password = os.getenv('MAILPASSWORD')
-
-#arduino = serial.Serial('COM5',9600)
 
 app=Flask(__name__)
 
@@ -165,13 +162,21 @@ def public_disabled(locker):
     publiclockers = db.lockers.find_one({})['available_lockers']
     return locker not in publiclockers
 
-def unoaction(checked,Input):
+def lockeraction(checked,Input):
     action = ''
     for locker in checked:
         action += locker
     action += Input
-    arduino.write(action.encode('utf-8'))
-    receive = arduino.readline().decode().strip()
+    db.lockers.update_one({}, {'$push': {'locker_actions': action}})
+    while True:
+        try:
+            publiclockers = db.lockers.find_one({})['locker_actions']
+            if action in publiclockers:
+                continue
+            else:
+                break
+        except KeyError:
+            break
 
 def setlog(userid,checked):
     lockers = db.users.find_one({'userid':userid})['checked_in']
@@ -209,6 +214,8 @@ def fetchbalance():
     if 'log_userid' in session:
         userid = session['log_userid']
         balance = db.users.find_one({'userid':userid})['wallet']
+        if db.lockers.find_one({})['server']:
+            db.lockers.update_one({}, {'$set': {'server': False}})
         return jsonify({'balance':balance})
     else:
         return jsonify({'balance':'error'})
@@ -266,7 +273,7 @@ def console():
                         user = db.users.find_one({'userid':userid})
                         if 'timestamp' not in user:
                             db.users.update_one({'_id': user['_id']}, {'$set': {'timestamp': datetime.now()}})
-                        #unoaction(checked,'1')
+                        lockeraction(checked,'1')
                         flash('Please make sure to Logout')
                         return redirect(url_for('console'))
                     else:
@@ -296,7 +303,7 @@ def console():
                             db.users.update_one({'_id': user['_id']}, {'$unset': {'timestamp': ''}})
                             db.users.update_one({'_id': user['_id']}, {'$unset': {'mail_threshold': ''}})
                             db.users.update_one({'userid':userid}, {'$set': {'debit_status': False}})
-                        #unoaction(checked,'0')
+                        lockeraction(checked,'0')
                         flash('Please make sure to Logout')
                         return redirect(url_for('console'))
                     else:
