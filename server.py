@@ -43,6 +43,10 @@ def sendmail(userid,msg,status):
     finally:
         mail.close()
 
+def mailusername(userid):
+    username = db.users.find_one({'userid': userid})['username'].split()
+    return username[0]
+
 def servercheck():
     print('Server Started')
     while True:
@@ -53,7 +57,10 @@ def servercheck():
 
 def backgroundserver():
     print('Background Server Running')
-    deduction_amount = db.lockers.find_one({})['payable']
+    try:
+        deduction_amount = db.lockers.find_one({})['payable']
+    except KeyError:
+        db.lockers.update_one({}, {'$set': {'payable': 0.0}})
     while True:
         all_users = db.users.find()
         for user in all_users:
@@ -62,7 +69,14 @@ def backgroundserver():
             else:
                 userid = user['userid']
                 timestamp = user['timestamp']
-                checked_in_lockers = len(user['checked_in'])
+                try:
+                    checked_in_lockers = len(user['checked_in'])
+                except KeyError:
+                    db.users.update_one({'userid': userid}, {'$unset': {'timestamp': ''}})
+                    db.users.update_one({'userid': userid}, {'$unset': {'mail_threshold': ''}})
+                    db.users.update_one({'userid': userid}, {'$unset': {'zero_balance': ''}})
+                    db.users.update_one({'userid': userid}, {'$set': {'debit_status': False}})
+                    continue
                 time_difference = datetime.now() - timestamp
                 minute_difference = int(time_difference.total_seconds() / 60)
                 if minute_difference >= 1:
@@ -74,9 +88,10 @@ def backgroundserver():
                     db.users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now()}})
                     dbuser = db.users.find_one({'userid':userid})
                     balance = dbuser['wallet']
-                    if balance <= 30:
+                    if balance <= 30 and balance > 0:
                         if 'mail_threshold' not in dbuser:
-                            msg = f'Subject: Low Balance\n\nPlease recharge your wallet for uninterrupted Checkin and Checkout of your valuables from the lockers,\n\nYou won\'t be able to login to Smart Lockers if the balance is less than ₹1.\n\nYour current balance is ₹{balance}'
+                            username = mailusername(userid)
+                            msg = f'Subject: Low Balance\n\nHi,{username}\n\nPlease recharge your wallet for uninterrupted Checkin and Checkout of your valuables from the lockers,\n\nYou won\'t be able to access Smart Lockers if the balance is less than ₹1.\n\nYour current balance is ₹{balance}'
                             status = f'Low Balance Message sent to {userid} at {datetime.now()}'
                             output = sendmail(userid,msg,status)
                             if output == status:
@@ -89,7 +104,8 @@ def backgroundserver():
                             threshold_time = datetime.now() - threshold
                             threshold_difference = int(threshold_time.total_seconds() / 60)
                             if threshold_difference >= 60:
-                                msg = f'Subject: Low Balance\n\nPlease recharge your wallet for uninterrupted Checkin and Checkout of your valuables from the lockers,\n\nYou won\'t be able to login to Smart Lockers if the balance is less than ₹1.\n\nYour current balance is ₹{balance}'
+                                username = mailusername(userid)
+                                msg = f'Subject: Low Balance\n\nHi,{username}\n\nPlease recharge your wallet for uninterrupted Checkin and Checkout of your valuables from the lockers,\n\nYou won\'t be able to login to Smart Lockers if the balance is less than ₹1.\n\nYour current balance is ₹{balance}'
                                 status = f'Low Balance Message sent to {userid} at {datetime.now()}'
                                 output = sendmail(userid,msg,status)
                                 if output == status:
@@ -97,6 +113,34 @@ def backgroundserver():
                                     db.users.update_one({'userid':userid}, {'$set': {'mail_threshold':datetime.now()}})
                                 else:
                                     print(output)
+                    elif balance <= 0:
+                        if 'zero_balance' not in dbuser:
+                            username = mailusername(userid)
+                            msg = f'Subject: No Balance\n\nHi,{username}\n\nPlease recharge your wallet to Checkin and Checkout of your valuables from the lockers.\n\nYour current balance is ₹{balance}'
+                            status = f'No Balance Message sent to {userid} at {datetime.now()}'
+                            output = sendmail(userid,msg,status)
+                            if output == status:
+                                print(output)
+                                db.users.update_one({'userid':userid}, {'$set': {'zero_balance':datetime.now()}})
+                            else:
+                                print(output)
+                        else:
+                            threshold = dbuser['zero_balance']
+                            threshold_time = datetime.now() - threshold
+                            threshold_difference = int(threshold_time.total_seconds() / 60)
+                            if threshold_difference >= 20:
+                                username = mailusername(userid)
+                                msg = f'Subject: No Balance\n\nHi,{username}\n\nPlease recharge your wallet to Checkin and Checkout of your valuables from the lockers.\n\nYour current balance is ₹{balance}'
+                                status = f'No Balance Message sent to {userid} at {datetime.now()}'
+                                output = sendmail(userid,msg,status)
+                                if output == status:
+                                    print(output)
+                                    db.users.update_one({'userid':userid}, {'$set': {'zero_balance':datetime.now()}})
+                                else:
+                                    print(output)
+                    else:
+                        db.users.update_one({'userid':userid}, {'$unset': {'mail_threshold': ''}})
+                        db.users.update_one({'userid':userid}, {'$unset': {'zero_balance': ''}})
         time.sleep(0.2)
 
 def lockerserver():
@@ -106,7 +150,9 @@ def lockerserver():
             locker_actions = db.lockers.find_one({})['locker_actions']
             for i in locker_actions:
                 arduino.write(i.encode('utf-8'))
+                print(f'Locker action: {i} updating')
                 receive = arduino.readline().decode().strip()
+                print(f'Locker action: {receive} updated')
                 db.lockers.update_one({}, {'$pull': {'locker_actions': i}})
         else:
             continue

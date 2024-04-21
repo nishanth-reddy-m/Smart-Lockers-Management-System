@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interface</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body style="padding: 0;">
+    <div class="container" style="display: flex;flex-direction: column;width: 400px;justify-content: space-around;align-items: center;padding-top:25px;padding-bottom: 25px;">
+    <div><h2 class="info" style="font-size:xx-large;">Admin</h2></div>
+    <div class="centre info" style="color: grey;margin-bottom: 10px;">{{userid}}</div>
+    <hr width="100%">
+    <div class="container" style="padding: 2%;width: 25%;min-width: 250px;border: none;">
+        <h2>Add Lockers</h2>
+        <form method="post">
+            <ul>
+                {% for locker in lockers %}
+                <li>
+                    <input type="checkbox" id="all_{{locker}}" value="{{locker}}" disabled>
+                    <label class="checkbox" for="all_{{locker}}" data-number="{{locker}}" style="margin-bottom: 0;"></label>
+                </li>
+                {% endfor %}
+            </ul>
+            <div style="display: flex; justify-content: space-around; align-items: center;"><input type="number" style="text-align: center;" step="1" name="lockerid" id="lockerid" placeholder="Locker Number (1-6)" autocomplete="off" min="1" max="6" required></div>
+            <div class="centre"><button type="submit" class="mainbutton" name="add">Add</button></div>
+        </form>
+    </div><hr width="100%">
+    <div class="container" style="padding: 2%;width: 25%;min-width: 250px;border: none;">
+        <h2>Remove Lockers</h2>
+        <form method="post">
+            <ul>
+                {% for locker in lockers %}
+                <li>
+                    <input type="checkbox" id="global_{{locker}}" name="global_lockers" value="{{locker}}" {% if public_disabled(locker) %}disabled{% endif %}>
+                    <label class="checkbox" for="global_{{locker}}" data-number="{{locker}}" style="margin-bottom: 0;"></label>
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="centre"><button type="submit" class="mainbutton" name="remove" disabled>Remove</button></div>
+        </form>
+    </div><hr width="100%">
+    <div class="container" style="border: none;">
+        <h2>Charges per Minute</h2><br>
+        <form method="POST">
+            <div>
+                <div class="centre" style="margin: 0;"><input type="number" style="width: 100%;text-align: center;" step="any" name="charges" id="charges" placeholder="{{payable}}" autocomplete="off" min="0" required/></div>
+            </div><br>
+            <div class="centre" style="margin-top: 0;"><button class="mainbutton" type="submit" name="change">Change</button></div>
+        </form>
+    </div>
+    </div>
+    <div class="centre"><form method="post"><button type="submit" class="mainbutton" name="logout">Logout</button></form></div>
+</body>
+<script>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                setTimeout(function() { alert('{{message}}'); }, 100);
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    var evtSource = new EventSource('/updatelockers');
+
+    evtSource.onmessage = function(event) {
+        location.reload();
+    };
+
+    evtSource.onerror = function(err) {
+        location.reload();
+    };
+
+    function updateButtonState() {
+        var global_checkbox = document.querySelectorAll('input[name="global_lockers"]');
+        var removeButton = document.querySelector('button[name="remove"]');
+        var global_checkedCount = 0;
+
+        global_checkbox.forEach(function(checkbox) {
+            if (checkbox.checked) {
+                global_checkedCount++;
+            }
+        });
+
+        if (global_checkedCount > 0) {
+            removeButton.removeAttribute('disabled');
+        } else {
+            removeButton.setAttribute('disabled', 'disabled');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateButtonState();
+
+        var global_checkbox = document.querySelectorAll('input[name="global_lockers"]');
+        global_checkbox.forEach(function(checkbox) {
+            checkbox.addEventListener('change', updateButtonState);
+        });
+    });
+</script>
+</html>

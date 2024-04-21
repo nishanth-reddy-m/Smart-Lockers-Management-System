@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Loading{% endblock %}
+
+{% block content %}
+    <h2>Logging in...</h2>
+    <script>
+        setInterval(function() {
+            window.location.href = "/login/admin";
+        }, 500);
+    </script>
+{% endblock %}

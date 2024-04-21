@@ -1,12 +1,68 @@
-{% extends 'base.html' %}
-
-{% block title %}Home{% endblock %}
-
-{% block content %}
-    <div class="container" style="width: 20%;">
-        <h2>Smart Lockers</h2><br><br>
-        <form action="/login"><div class="centre"><button style="font-size: medium; width: 100%;">Login</button></div></form>
-        <form action="/register"><div class="centre"><button style="font-size: medium; width: 100%;">Register</button></div></form>
-        <form action="/recharge"><div class="centre"><button style="font-size: medium; width: 100%;">Recharge Wallet</button></div></form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content:space-around;
+            align-items: center;
+            height: 75vh;
+        }
+        .container {
+            width: 300px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+        }
+        button {
+            font-size: 18px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="padding: 150px;padding-top: 40px;padding-bottom: 50px;">
+        <h2>Smart Lockers</h2>
+        <hr style="width: 100%;"><br>
+        <form action="/login">
+            <button>Login</button>
+        </form>
+        <form action="/register">
+            <button>Register</button>
+        </form>
+        <form action="/recharge">
+            <button>Recharge Wallet</button>
+        </form>
     </div>
-{% endblock %}
+    {% if alert %}
+    <script>
+        setTimeout(function() {
+            alert('{{alert}}');
+        }, 500);
+    </script>
+    {% endif %}
+</body>
+</html>
