@@ -142,7 +142,6 @@ def register():
                 'userid':userid, 
                 'userpass':userpass,
                 'username':username,
-                'user':True,
                 'admin':False,
                 'qanda':{
                     'q1':q1,
