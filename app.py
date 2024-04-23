@@ -366,7 +366,7 @@ def admin():
                     return redirect(url_for('admin'))
             if 'logout' in request.form:
                 session.pop('log_adminid', None)
-                return redirect('/')
+                return render_template('logout.html')
         serverupdate()
         return render_template('admin.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled,payable=payable)
     except KeyError:
@@ -444,7 +444,7 @@ def console():
         if 'logout' in request.form:
             session.pop('log_userid', None)
             session.pop('log_lockers', None)
-            return redirect('/')
+            return render_template('logout.html')
         return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, creditlog=creditlog, debitlog=debitlog, amount=amount, payable=payable)
     except KeyError:
         return redirect('/login')
