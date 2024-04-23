@@ -3,7 +3,7 @@ import random
 import smtplib
 from datetime import datetime
 from flask import *
-from pymongo import MongoClient
+from flask_pymongo import PyMongo
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,9 +16,10 @@ secretkey = os.getenv('SECRETKEY')
 app=Flask(__name__)
 
 app.config["SECRET_KEY"] = secretkey
+app.config['MONGO_URI'] = mongodb
+mongo = PyMongo(app)
 
-mongo = MongoClient(mongodb)
-db = mongo.majorproject
+db = mongo.db
 lockercollection = db['lockers']
 session_error = 'Session Ended'
 
