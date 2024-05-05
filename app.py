@@ -53,19 +53,6 @@ def sendmail(userid,msg,status):
     finally:
         mail.close()
 
-@app.route('/updatelockers')
-def stream():
-    def generate():
-        pipeline = [
-            {'$match': {'operationType': 'update'}},
-            {'$match': {'$or': [{'updateDescription.updatedFields.updates': {'$exists': True}}]}}
-            ]
-        with lockercollection.watch(pipeline=pipeline) as stream:
-            for change in stream:
-                yield 'data: reload\n\n'
-                db.lockers.update_one({}, {'$set': {'updates': False}})
-    return Response(generate(), mimetype='text/event-stream')
-
 @app.route('/')
 def home():
     if 'log_adminid' in session or 'log_userid' in session or 'reg_userid' in session or 'rec_userid' in session or 'res_userid' in session or 'log_user' in session:

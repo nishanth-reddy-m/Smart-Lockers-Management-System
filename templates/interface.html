@@ -103,16 +103,6 @@
         {% endif %}
     {% endwith %}
 
-    var evtSource = new EventSource('/updatelockers');
-
-    evtSource.onmessage = function(event) {
-        location.reload();
-    };
-
-    evtSource.onerror = function(err) {
-        location.reload();
-    };
-
     function fetchbalance()
     {
         var ajax = new XMLHttpRequest();

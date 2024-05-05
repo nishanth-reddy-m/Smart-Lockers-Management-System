@@ -61,16 +61,6 @@
         {% endif %}
     {% endwith %}
 
-    var evtSource = new EventSource('/updatelockers');
-
-    evtSource.onmessage = function(event) {
-        location.reload();
-    };
-
-    evtSource.onerror = function(err) {
-        location.reload();
-    };
-
     function updateButtonState() {
         var global_checkbox = document.querySelectorAll('input[name="global_lockers"]');
         var removeButton = document.querySelector('button[name="remove"]');
