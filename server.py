@@ -69,14 +69,6 @@ def backgroundserver():
             else:
                 userid = user['userid']
                 timestamp = user['timestamp']
-                try:
-                    checked_in_lockers = len(user['checked_in'])
-                except KeyError:
-                    db.users.update_one({'userid': userid}, {'$unset': {'timestamp': ''}})
-                    db.users.update_one({'userid': userid}, {'$unset': {'mail_threshold': ''}})
-                    db.users.update_one({'userid': userid}, {'$unset': {'zero_balance': ''}})
-                    db.users.update_one({'userid': userid}, {'$set': {'debit_status': False}})
-                    continue
                 time_difference = datetime.now() - timestamp
                 minute_difference = int(time_difference.total_seconds() / 60)
                 if minute_difference >= 1:

@@ -322,13 +322,11 @@ def admin():
                             db.lockers.update_one({},{'$set': {'all_lockers': newlockers}})
                             db.lockers.update_one({},{'$push': {'available_lockers': str(lockerid)}})
                             flash('New Locker Added')
-                            db.lockers.update_one({}, {'$set': {'updates': True}})
                             return redirect(url_for('admin'))
                     except KeyError:
                             db.lockers.update_one({},{'$push': {'all_lockers': str(lockerid)}})
                             db.lockers.update_one({},{'$push': {'available_lockers': str(lockerid)}})
                             flash('First Locker Added')
-                            db.lockers.update_one({}, {'$set': {'updates': True}})
                             return redirect(url_for('admin'))
                 else:
                     flash('Invalid Input')
@@ -340,7 +338,6 @@ def admin():
                     db.lockers.update_one({},{'$pull':{'all_lockers':{'$in': checkedlockers}}})
                     db.lockers.update_one({},{'$pull':{'available_lockers':{'$in': checkedlockers}}})
                     flash('Lockers removed successfully')
-                    db.lockers.update_one({}, {'$set': {'updates': True}})
                     return redirect(url_for('admin'))
                 else:
                     flash('Selected Locker not available')
@@ -350,11 +347,10 @@ def admin():
                 if charges >= 0:
                     db.lockers.update_one({}, {'$set': {'payable': charges}})
                     flash('Charges Updated')
-                    db.lockers.update_one({}, {'$set': {'updates': True}})
                     return redirect(url_for('admin'))
             if 'logout' in request.form:
                 session.pop('log_adminid', None)
-                return render_template('logout.html')
+                return redirect(url_for('home'))
         serverupdate()
         return render_template('admin.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled,payable=payable)
     except KeyError:
@@ -386,7 +382,6 @@ def console():
                         if 'timestamp' not in user:
                             db.users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now()}})
                         flash('Please make sure to Logout')
-                        db.lockers.update_one({}, {'$set': {'updates': True}})
                         return redirect(url_for('console'))
                     else:
                         flash('Locker unavailable')
@@ -418,7 +413,6 @@ def console():
                             db.users.update_one({'userid':userid}, {'$unset': {'zero_balance': ''}})
                             db.users.update_one({'userid':userid}, {'$set': {'debit_status': False}})
                         flash('Please make sure to Logout')
-                        db.lockers.update_one({}, {'$set': {'updates': True}})
                         return redirect(url_for('console'))
                     else:
                         flash('Locker already checked out')
@@ -432,7 +426,7 @@ def console():
         if 'logout' in request.form:
             session.pop('log_userid', None)
             session.pop('log_lockers', None)
-            return render_template('logout.html')
+            return redirect(url_for('home'))
         return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, creditlog=creditlog, debitlog=debitlog, amount=amount, payable=payable)
     except KeyError:
         return redirect('/login')
@@ -553,13 +547,6 @@ def reset():
         return render_template('validate.html',display=True)
     except KeyError:
         return redirect('/')
-
-@app.route('/testing', methods=['GET','POST'])
-def testing():
-    userid = 'nishanth.reddym004@gmail.com'
-    lockers = db.lockers.find_one({})['all_lockers']
-    serverupdate()
-    return render_template('index.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled)
 
 if(__name__=='__main__'):
     app.run(debug = True)
