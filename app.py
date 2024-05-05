@@ -312,7 +312,7 @@ def admin():
                 lockerid = int(request.form['lockerid'], 0)
                 if lockerid <= 6 and lockerid >= 1:
                     try:
-                        if lockerid in db.lockers.find_one({})['all_lockers']:
+                        if str(lockerid) in db.lockers.find_one({})['all_lockers']:
                             flash('Locker already exist')
                             return redirect(url_for('admin'))
                         else:
