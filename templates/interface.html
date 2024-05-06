@@ -56,7 +56,7 @@
                 <tbody>
                 {% for log in creditlog() %}
                 <tr>
-                    <td>{{ log[1].strftime('%d/%m/%Y - %H:%M:%S') }}</td>
+                    <td>{{ changetz(log[1]).strftime('%d/%m/%Y - %H:%M:%S') }}</td>
                     <td>₹{{ log[0] }}</td>
                 </tr>
                 {% endfor %}
@@ -84,8 +84,8 @@
                 {% for log in debitlog() %}
                 <tr>
                     <td>Locker {{ log[0] }}</td>
-                    <td>{{ log[1].strftime('%d/%m/%Y - %H:%M:%S') }}</td>
-                    <td>{{ log[2].strftime('%d/%m/%Y - %H:%M:%S') }}</td>
+                    <td>{{ changetz(log[1]).strftime('%d/%m/%Y - %H:%M:%S') }}</td>
+                    <td>{{ changetz(log[2]).strftime('%d/%m/%Y - %H:%M:%S') }}</td>
                     <td>₹{{ log[3] }}</td>
                 </tr>
                 {% endfor %}

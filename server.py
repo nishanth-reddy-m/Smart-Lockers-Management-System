@@ -4,7 +4,7 @@ import smtplib
 import serial
 import time
 import serial.tools.list_ports
-from datetime import datetime
+from datetime import datetime,UTC,timedelta
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
@@ -68,66 +68,67 @@ def backgroundserver():
                 continue
             else:
                 userid = user['userid']
-                timestamp = user['timestamp']
-                time_difference = datetime.now() - timestamp
+                timestamp = user['timestamp'].replace(tzinfo=UTC)
+                checked_in_lockers = len(user['checked_in'])
+                time_difference = datetime.now(UTC) - timestamp
                 minute_difference = int(time_difference.total_seconds() / 60)
                 if minute_difference >= 1:
                     debit = minute_difference*deduction_amount*checked_in_lockers
                     deduction = deduction_amount*checked_in_lockers
                     db.users.update_one({'userid':userid}, {'$inc': {'wallet': -debit}})
                     db.users.update_one({'userid':userid}, {'$set': {'debit_status': True}})
-                    print(f'₹{debit} debited from {userid} at {datetime.now()}')
-                    db.users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now()}})
+                    print(f'₹{debit} debited from {userid} at {datetime.now(UTC) + timedelta(hours=5,minutes=30)}')
+                    db.users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now(UTC)}})
                     dbuser = db.users.find_one({'userid':userid})
                     balance = dbuser['wallet']
                     if balance <= 30 and balance > 0:
                         if 'mail_threshold' not in dbuser:
                             username = mailusername(userid)
                             msg = f'Subject: Low Balance\n\nHi,{username}\n\nPlease recharge your wallet for uninterrupted Checkin and Checkout of your valuables from the lockers,\n\nYou won\'t be able to access Smart Lockers if the balance is less than ₹1.\n\nYour current balance is ₹{balance}'
-                            status = f'Low Balance Message sent to {userid} at {datetime.now()}'
+                            status = f'Low Balance Message sent to {userid} at {datetime.now(UTC) + timedelta(hours=5,minutes=30)}'
                             output = sendmail(userid,msg,status)
                             if output == status:
                                 print(output)
-                                db.users.update_one({'userid':userid}, {'$set': {'mail_threshold':datetime.now()}})
+                                db.users.update_one({'userid':userid}, {'$set': {'mail_threshold':datetime.now(UTC)}})
                             else:
                                 print(output)
                         else:
-                            threshold = dbuser['mail_threshold']
-                            threshold_time = datetime.now() - threshold
+                            threshold = dbuser['mail_threshold'].replace(tzinfo=UTC)
+                            threshold_time = datetime.now(UTC) - threshold
                             threshold_difference = int(threshold_time.total_seconds() / 60)
                             if threshold_difference >= 60:
                                 username = mailusername(userid)
                                 msg = f'Subject: Low Balance\n\nHi,{username}\n\nPlease recharge your wallet for uninterrupted Checkin and Checkout of your valuables from the lockers,\n\nYou won\'t be able to login to Smart Lockers if the balance is less than ₹1.\n\nYour current balance is ₹{balance}'
-                                status = f'Low Balance Message sent to {userid} at {datetime.now()}'
+                                status = f'Low Balance Message sent to {userid} at {datetime.now(UTC) + timedelta(hours=5,minutes=30)}'
                                 output = sendmail(userid,msg,status)
                                 if output == status:
                                     print(output)
-                                    db.users.update_one({'userid':userid}, {'$set': {'mail_threshold':datetime.now()}})
+                                    db.users.update_one({'userid':userid}, {'$set': {'mail_threshold':datetime.now(UTC)}})
                                 else:
                                     print(output)
                     elif balance <= 0:
                         if 'zero_balance' not in dbuser:
                             username = mailusername(userid)
                             msg = f'Subject: No Balance\n\nHi,{username}\n\nPlease recharge your wallet to Checkin and Checkout of your valuables from the lockers.\n\nYour current balance is ₹{balance}'
-                            status = f'No Balance Message sent to {userid} at {datetime.now()}'
+                            status = f'No Balance Message sent to {userid} at {datetime.now(UTC) + timedelta(hours=5,minutes=30)}'
                             output = sendmail(userid,msg,status)
                             if output == status:
                                 print(output)
-                                db.users.update_one({'userid':userid}, {'$set': {'zero_balance':datetime.now()}})
+                                db.users.update_one({'userid':userid}, {'$set': {'zero_balance':datetime.now(UTC)}})
                             else:
                                 print(output)
                         else:
-                            threshold = dbuser['zero_balance']
-                            threshold_time = datetime.now() - threshold
+                            threshold = dbuser['zero_balance'].replace(tzinfo=UTC)
+                            threshold_time = datetime.now(UTC) - threshold
                             threshold_difference = int(threshold_time.total_seconds() / 60)
                             if threshold_difference >= 20:
                                 username = mailusername(userid)
                                 msg = f'Subject: No Balance\n\nHi,{username}\n\nPlease recharge your wallet to Checkin and Checkout of your valuables from the lockers.\n\nYour current balance is ₹{balance}'
-                                status = f'No Balance Message sent to {userid} at {datetime.now()}'
+                                status = f'No Balance Message sent to {userid} at {datetime.now(UTC) + timedelta(hours=5,minutes=30)}'
                                 output = sendmail(userid,msg,status)
                                 if output == status:
                                     print(output)
-                                    db.users.update_one({'userid':userid}, {'$set': {'zero_balance':datetime.now()}})
+                                    db.users.update_one({'userid':userid}, {'$set': {'zero_balance':datetime.now(UTC)}})
                                 else:
                                     print(output)
                     else:

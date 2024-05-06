@@ -1,7 +1,7 @@
 import os
 import random
 import smtplib
-from datetime import datetime
+from datetime import datetime,UTC,timedelta
 from flask import *
 from flask_pymongo import PyMongo
 from dotenv import load_dotenv
@@ -176,7 +176,7 @@ def recharge():
             amount = float(request.form['amount'])
             if amount > 0:
                 db.users.update_one({'userid':userid}, {'$inc': {'wallet': amount}})
-                credit_log = [amount,datetime.now()]
+                credit_log = [amount,datetime.now(UTC)]
                 db.users.update_one({'userid': userid}, {'$push': {'credit_log': credit_log}})
                 wallet = db.users.find_one({'userid':userid})['wallet']
                 session.pop('rec_userid', None)
@@ -220,8 +220,8 @@ def setlog(userid,checked):
     user_log = []
     for locker in checked:
         if locker in lockers:
-            checkin = lockers[locker]
-            checkout = datetime.now()
+            checkin = lockers[locker].replace(tzinfo=UTC)
+            checkout = datetime.now(UTC)
             checked_time = checkout - checkin
             amount = int(checked_time.total_seconds() / 60)*payable
             user_log.append([locker,checkin,checkout,amount])
@@ -244,6 +244,10 @@ def debitlog():
         return logs
     else:
         return
+
+def changetz(timedata):
+    converted_time = timedata + timedelta(hours=5,minutes=30)
+    return converted_time
 
 @app.route('/fetchbalance', methods=['POST'])
 def fetchbalance():
@@ -350,7 +354,7 @@ def admin():
                     return redirect(url_for('admin'))
             if 'logout' in request.form:
                 session.pop('log_adminid', None)
-                return redirect(url_for('home'))
+                return render_template('logoutconsole.html')
         serverupdate()
         return render_template('admin.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled,payable=payable)
     except KeyError:
@@ -377,10 +381,10 @@ def console():
                     if all(locker in available_lockers for locker in checked):
                         lockeraction(checked,'1')
                         db.lockers.update_one({},{'$pull':{'available_lockers':{'$in': checked}}})
-                        db.users.update_one({'userid':userid}, {"$set": {f"checked_in.{locker}": datetime.now() for locker in checked}})
+                        db.users.update_one({'userid':userid}, {"$set": {f"checked_in.{locker}": datetime.now(UTC) for locker in checked}})
                         user = db.users.find_one({'userid':userid})
                         if 'timestamp' not in user:
-                            db.users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now()}})
+                            db.users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now(UTC)}})
                         flash('Please make sure to Logout')
                         return redirect(url_for('console'))
                     else:
@@ -426,8 +430,8 @@ def console():
         if 'logout' in request.form:
             session.pop('log_userid', None)
             session.pop('log_lockers', None)
-            return redirect(url_for('home'))
-        return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, creditlog=creditlog, debitlog=debitlog, amount=amount, payable=payable)
+            return render_template('logoutconsole.html')
+        return render_template('interface.html',userid=userid,lockers=lockers,private_disabled=private_disabled,public_disabled=public_disabled, creditlog=creditlog, debitlog=debitlog, changetz=changetz, amount=amount, payable=payable)
     except KeyError:
         return redirect('/login')
 
