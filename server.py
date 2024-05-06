@@ -77,15 +77,15 @@ def backgroundserver():
                     deduction = deduction_amount*checked_in_lockers
                     db.users.update_one({'userid':userid}, {'$inc': {'wallet': -debit}})
                     db.users.update_one({'userid':userid}, {'$set': {'debit_status': True}})
-                    print(f'₹{debit} debited from {userid} at {datetime.now(UTC) + timedelta(hours=5,minutes=30)}')
+                    print(f'₹{debit} debited from {userid} at {datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=5,minutes=30)}')
                     db.users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now(UTC)}})
                     dbuser = db.users.find_one({'userid':userid})
                     balance = dbuser['wallet']
                     if balance <= 30 and balance > 0:
                         if 'mail_threshold' not in dbuser:
                             username = mailusername(userid)
-                            msg = f'Subject: Low Balance\n\nHi,{username}\n\nPlease recharge your wallet for uninterrupted Checkin and Checkout of your valuables from the lockers,\n\nYou won\'t be able to access Smart Lockers if the balance is less than ₹1.\n\nYour current balance is ₹{balance}'
-                            status = f'Low Balance Message sent to {userid} at {datetime.now(UTC) + timedelta(hours=5,minutes=30)}'
+                            msg = f'Subject: Low Balance\n\nHi,{username}\n\nPlease recharge your wallet for uninterrupted Checkin and Checkout of your valuables from the lockers,\n\nYou won\'t be able to access Smart Lockers if the balance is less than ₹0.\n\nYour current balance is ₹{balance}'
+                            status = f'Low Balance Message sent to {userid} at {datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=5,minutes=30)}'
                             output = sendmail(userid,msg,status)
                             if output == status:
                                 print(output)
@@ -98,8 +98,8 @@ def backgroundserver():
                             threshold_difference = int(threshold_time.total_seconds() / 60)
                             if threshold_difference >= 60:
                                 username = mailusername(userid)
-                                msg = f'Subject: Low Balance\n\nHi,{username}\n\nPlease recharge your wallet for uninterrupted Checkin and Checkout of your valuables from the lockers,\n\nYou won\'t be able to login to Smart Lockers if the balance is less than ₹1.\n\nYour current balance is ₹{balance}'
-                                status = f'Low Balance Message sent to {userid} at {datetime.now(UTC) + timedelta(hours=5,minutes=30)}'
+                                msg = f'Subject: Low Balance\n\nHi,{username}\n\nPlease recharge your wallet for uninterrupted Checkin and Checkout of your valuables from the lockers,\n\nYou won\'t be able to access Smart Lockers if the balance is less than ₹0.\n\nYour current balance is ₹{balance}'
+                                status = f'Low Balance Message sent to {userid} at {datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=5,minutes=30)}'
                                 output = sendmail(userid,msg,status)
                                 if output == status:
                                     print(output)
@@ -109,8 +109,8 @@ def backgroundserver():
                     elif balance <= 0:
                         if 'zero_balance' not in dbuser:
                             username = mailusername(userid)
-                            msg = f'Subject: No Balance\n\nHi,{username}\n\nPlease recharge your wallet to Checkin and Checkout of your valuables from the lockers.\n\nYour current balance is ₹{balance}'
-                            status = f'No Balance Message sent to {userid} at {datetime.now(UTC) + timedelta(hours=5,minutes=30)}'
+                            msg = f'Subject: No Balance\n\nHi,{username}\n\nPlease recharge your Smart Lockers wallet to Checkin or Checkout your valuables.\n\nYour current balance is ₹{balance}'
+                            status = f'No Balance Message sent to {userid} at {datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=5,minutes=30)}'
                             output = sendmail(userid,msg,status)
                             if output == status:
                                 print(output)
@@ -124,7 +124,7 @@ def backgroundserver():
                             if threshold_difference >= 20:
                                 username = mailusername(userid)
                                 msg = f'Subject: No Balance\n\nHi,{username}\n\nPlease recharge your wallet to Checkin and Checkout of your valuables from the lockers.\n\nYour current balance is ₹{balance}'
-                                status = f'No Balance Message sent to {userid} at {datetime.now(UTC) + timedelta(hours=5,minutes=30)}'
+                                status = f'No Balance Message sent to {userid} at {datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=5,minutes=30)}'
                                 output = sendmail(userid,msg,status)
                                 if output == status:
                                     print(output)

@@ -140,6 +140,7 @@ def register():
                     'a3':a3,
                     },
                 'checked_in':{},
+                'updates':False,
                 'debit_status':False,
                 'wallet':0.0 })
             session.pop('reg_userid', None)
@@ -148,8 +149,8 @@ def register():
     serverupdate()
     return render_template('register.html',condition2='disabled')
 
-@app.route('/balancerecharge', methods=['POST'])
-def balancerecharge():
+@app.route('/fetchbalance', methods=['POST'])
+def fetchbalance():
     if 'rec_userid' in session:
         userid = session['rec_userid']
         balance = db.users.find_one({'userid':userid})['wallet']
@@ -249,16 +250,21 @@ def changetz(timedata):
     converted_time = timedata + timedelta(hours=5,minutes=30)
     return converted_time
 
-@app.route('/fetchbalance', methods=['POST'])
-def fetchbalance():
+@app.route('/fetchupdates', methods=['POST'])
+def fetchupdates():
     if 'log_userid' in session:
         userid = session['log_userid']
         balance = db.users.find_one({'userid':userid})['wallet']
+        updates = db.users.find_one({'userid':userid})['updates']
         if db.lockers.find_one({})['server']:
             db.lockers.update_one({}, {'$set': {'server': False}})
-        return jsonify({'balance':balance})
+        if updates:
+            db.users.update_one({'userid':userid}, {'$set': {'updates': False}})
+            return jsonify({'balance':balance,'updates':True})
+        else:
+            return jsonify({'balance':balance,'updates':updates})
     else:
-        return jsonify({'balance':'error'})
+        return jsonify({'balance':'error','updates':False})
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -326,11 +332,13 @@ def admin():
                             db.lockers.update_one({},{'$set': {'all_lockers': newlockers}})
                             db.lockers.update_one({},{'$push': {'available_lockers': str(lockerid)}})
                             flash('New Locker Added')
+                            db.users.update_many({}, {'$set': {'updates':True}})
                             return redirect(url_for('admin'))
                     except KeyError:
                             db.lockers.update_one({},{'$push': {'all_lockers': str(lockerid)}})
                             db.lockers.update_one({},{'$push': {'available_lockers': str(lockerid)}})
                             flash('First Locker Added')
+                            db.users.update_many({}, {'$set': {'updates':True}})
                             return redirect(url_for('admin'))
                 else:
                     flash('Invalid Input')
@@ -342,6 +350,7 @@ def admin():
                     db.lockers.update_one({},{'$pull':{'all_lockers':{'$in': checkedlockers}}})
                     db.lockers.update_one({},{'$pull':{'available_lockers':{'$in': checkedlockers}}})
                     flash('Lockers removed successfully')
+                    db.users.update_many({}, {'$set': {'updates':True}})
                     return redirect(url_for('admin'))
                 else:
                     flash('Selected Locker not available')
@@ -351,6 +360,7 @@ def admin():
                 if charges >= 0:
                     db.lockers.update_one({}, {'$set': {'payable': charges}})
                     flash('Charges Updated')
+                    db.users.update_many({}, {'$set': {'updates':True}})
                     return redirect(url_for('admin'))
             if 'logout' in request.form:
                 session.pop('log_adminid', None)
@@ -386,6 +396,8 @@ def console():
                         if 'timestamp' not in user:
                             db.users.update_one({'userid':userid}, {'$set': {'timestamp': datetime.now(UTC)}})
                         flash('Please make sure to Logout')
+                        db.users.update_many({}, {'$set': {'updates':True}})
+                        db.users.update_one({'userid':userid}, {'$set': {'updates':False}})
                         return redirect(url_for('console'))
                     else:
                         flash('Locker unavailable')
@@ -417,6 +429,8 @@ def console():
                             db.users.update_one({'userid':userid}, {'$unset': {'zero_balance': ''}})
                             db.users.update_one({'userid':userid}, {'$set': {'debit_status': False}})
                         flash('Please make sure to Logout')
+                        db.users.update_many({}, {'$set': {'updates':True}})
+                        db.users.update_one({'userid':userid}, {'$set': {'updates':False}})
                         return redirect(url_for('console'))
                     else:
                         flash('Locker already checked out')

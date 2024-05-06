@@ -106,13 +106,18 @@
     function fetchbalance()
     {
         var ajax = new XMLHttpRequest();
-        ajax.open('POST','/fetchbalance',true);
+        ajax.open('POST','/fetchupdates',true);
 
         ajax.onload = function()
         {
             var userbalance = document.getElementById('userbalance');
             var data = JSON.parse(ajax.responseText);
             var balance = data.balance;
+            var updates = data.updates;
+            if (updates)
+            {
+                location.reload();
+            }
             if (balance === 'error')
             {
                 window.location.href = "/login";

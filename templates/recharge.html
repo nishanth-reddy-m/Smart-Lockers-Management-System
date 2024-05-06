@@ -3,7 +3,7 @@
 {% block title %}Wallet Recharge{% endblock %}
 
 {% block content %}
-    <div class="container" style="padding: 2%; width: 30%;">
+    <div class="container" style="padding: 50px; width: 300px;">
         <h2>Recharge Wallet</h2><br>
         <div class="inline centre">
             <form method="POST" style="margin: 0;">
@@ -27,7 +27,7 @@
         function fetchbalance()
         {
             var ajax = new XMLHttpRequest();
-            ajax.open('POST','/balancerecharge',true);
+            ajax.open('POST','/fetchbalance',true);
     
             ajax.onload = function()
             {
